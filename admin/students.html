@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>🏫 Klassen & Schüler verwalten</title>
+  <link rel="stylesheet" href="admin.css">
+  <style>
+    /* Pfeil für einklappbare Karten */
+    .class-title::after {
+      content: "▼";
+      transition: transform 0.3s ease;
+      font-size: 0.9rem;
+    }
+    .class-group.expanded .class-title::after {
+      transform: rotate(-180deg);
+    }
+    .class-content {
+      display: none; /* standardmäßig eingeklappt */
+      margin-top: 10px;
+    }
+    .class-group.expanded .class-content {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🏫 Klassen & Schüler</h1>
+    <nav>
+      <a class="btn btn-warning" href="/admin/admin.html">⬅ Zurück zur Admin-Seite</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Neue Klasse anlegen -->
+    <section class="classes-container">
+      <h2>Neue Klasse anlegen</h2>
+      <div class="button-group">
+        <input type="text" id="newClassName" placeholder="Klassenname">
+        <input type="text" id="newClassYear" placeholder="Jahrgang">
+        <input type="text" id="newClassTeacher" placeholder="Klassenlehrer">
+        <button class="btn btn-warning" id="addClassBtn">➕ Klasse hinzufügen</button>
+      </div>
+    </section>
+
+    <!-- Klassen Übersicht -->
+    <section class="classes-container">
+      <h2>Übersicht der Klassen</h2>
+      <div id="classList">
+        <!-- Beispiel einer Klasse -->
+        <!--
+        <div class="class-group">
+          <div class="class-title">Klasse 10A</div>
+          <div class="class-content">
+            <ul class="student-answers">
+              <li class="answer-card correct">
+                <div class="question">Max Mustermann</div>
+                <div class="given">Aufgabe 1: ✅</div>
+              </li>
+            </ul>
+          </div>
+        </div>
+        -->
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Karten auf-/zuklappen beim Klick
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('class-title')) {
+        const group = e.target.parentElement;
+        group.classList.toggle('expanded');
+      }
+    });
+  </script>
+  <script src="students.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+[
+  {
+    "name": "D",
+    "lehrer": "Frau Daseking",
+    "jahrgang": "2"
+  },
+  {
+    "name": "A",
+    "lehrer": "Frau Groß",
+    "jahrgang": "2"
+  },
+  {
+    "name": "A",
+    "lehrer": "Frau Groß",
+    "jahrgang": "3"
+  },
+  {
+    "name": "D",
+    "lehrer": "Frau Daseking",
+    "jahrgang": "3"
+  },
+  {
+    "name": "A",
+    "lehrer": "Gross",
+    "jahrgang": "4"
+  }
+]

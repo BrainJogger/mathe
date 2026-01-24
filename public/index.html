@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>🧮 Mathe Test</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>🧮 Mathe Test</h1>
+    <p>Teste dein 1x1 Wissen!</p>
+  </header>
+
+  <main>
+    <div id="start" class="card">
+  <label for="selectClass">Klasse:</label>
+  <select id="selectClass">
+    <option value="">Wähle Klasse</option>
+  </select>
+
+  <label for="selectYear">Jahrgang:</label>
+  <select id="selectYear" disabled>
+    <option value="">Wähle Jahrgang</option>
+  </select>
+
+  <label for="selectStudent">Schüler:</label>
+  <select id="selectStudent" disabled>
+    <option value="">Wähle Schüler</option>
+  </select>
+
+  <button id="startBtn">🚀 Test starten</button>
+</div>
+
+
+    <!-- Test-Bereich -->
+    <div id="test" class="card" style="display:none">
+      <h2>Beantworte die Aufgaben</h2>
+      <div id="timer" class="timer"></div>
+      <div id="taskContainer" class="task-grid"></div>
+      <div id="pagination" class="pagination"></div>
+      <button id="submitBtn">✅ Abschicken</button>
+    </div>
+
+    <!-- Ergebnis-Bereich -->
+    <div id="result" class="card" style="display:none">
+      <h2>Deine Ergebnisse</h2>
+      <div id="timerResult" class="timer"></div>
+      <div id="score"></div>
+      <div id="corrections" class="result-grid"></div>
+      <button id="restartBtn">🔄 Noch mal versuchen</button>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

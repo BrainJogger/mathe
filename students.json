@@ -1,0 +1,34 @@
+[
+  {
+    "id": "1757860067132586",
+    "name": "Jürgen",
+    "klasse": "A",
+    "jahrgang": "2"
+  },
+  {
+    "id": "1757860069994116",
+    "name": "Rainer",
+    "klasse": "A",
+    "jahrgang": "3"
+  },
+  {
+    "id": "1757860217570435",
+    "name": "Mel",
+    "klasse": "D",
+    "jahrgang": "2"
+  },
+  {
+    "id": "1759527289752141",
+    "name": "Frieda",
+    "klasse": "A",
+    "jahrgang": "2",
+    "lehrjahr": "2"
+  },
+  {
+    "id": "1759659533247948",
+    "name": "Julia",
+    "klasse": "D",
+    "jahrgang": "3",
+    "lehrjahr": "3"
+  }
+]

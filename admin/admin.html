@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <header>
+    <h1>📝 Admin Dashboard</h1>
+  </header>
+
+<section class="filters">
+  <input type="text" id="searchInput" placeholder="Suche nach Namen...">
+  <select id="classFilter">
+    <option value="">Alle Klassen</option>
+  </select>
+  <input type="date" id="dateFilter">
+  <select id="groupingSelect">
+    <option value="date">Gruppierung: Datum</option>
+    <option value="name">Gruppierung: Name</option>
+  </select>
+  <button id="clearFilter">Filter zurücksetzen</button>
+</section>
+
+  <section class="delete-section card">
+  <h2>🗑 Ergebnisse löschen</h2>
+
+  <div class="button-group">
+    <button id="deleteAll" class="btn btn-danger">Alles löschen</button>
+    <button id="deleteByDate" class="btn btn-warning">Nach Datum löschen</button>
+    <input type="date" id="deleteDateInput" class="date-input">
+    <a href="students.html" class="btn btn-primary">👩‍🏫 Klassen & Schüler verwalten</a>
+  </div>
+</section>
+
+
+
+  <section id="resultsContainer" class="results-container">
+    <!-- Ergebnisse werden hier geladen -->
+  </section>
+
+  <!-- jsPDF Bibliothek laden -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

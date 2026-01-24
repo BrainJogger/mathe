@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Lehrer Login</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="login-box">
+    <h1>🔑 Lehrer Login</h1>
+
+    <label for="teacherSelect">Lehrkraft:</label>
+    <select id="teacherSelect">
+      <option value="">-- Bitte wählen --</option>
+    </select>
+
+    <label>Passwort:</label>
+    <input type="password" id="teacherPassword">
+
+    <button id="loginBtn">Login</button>
+  </div>
+
+  <script>
+    // 🔹 Lehrer-Liste laden
+    async function loadTeachers() {
+      const res = await fetch("/api/teachers");
+      const data = await res.json();
+      const select = document.getElementById("teacherSelect");
+
+      data.forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t.lehrer;
+        opt.textContent = t.lehrer;
+        select.appendChild(opt);
+      });
+    }
+    loadTeachers();
+
+    // 🔐 Login
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const lehrer = document.getElementById("teacherSelect").value;
+      const password = document.getElementById("teacherPassword").value.trim();
+
+      if (!lehrer) return alert("Bitte Lehrkraft auswählen!");
+      if (!password) return alert("Bitte Passwort eingeben!");
+
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lehrer, password })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem("lehrerName", data.lehrer);
+        window.location.href = "/admin/dashboard";
+      } else {
+        alert(data.error || "❌ Falscher Name oder Passwort!");
+      }
+    });
+  </script>
+</body>
+</html>

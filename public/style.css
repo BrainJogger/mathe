@@ -1,0 +1,137 @@
+body {
+  font-family: 'Comic Sans MS', Arial, sans-serif;
+  background: #f0f9ff;
+  margin: 0;
+  padding: 0 10px;
+}
+
+header {
+  background: #4a90e2;
+  color: white;
+  text-align: center;
+  padding: 20px 10px;
+  border-bottom-left-radius: 15px;
+  border-bottom-right-radius: 15px;
+}
+
+header p {
+  font-size: 1.2rem;
+  margin-top: 5px;
+}
+
+/* Allgemeine Karten */
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px auto;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  max-width: 600px;
+  text-align: center;
+}
+
+/* Inputs */
+input[type="text"], input[type="number"] {
+  padding: 8px 10px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 2px solid #4a90e2;
+  margin: 10px 0;
+  width: calc(100% - 20px);
+  box-sizing: border-box;
+}
+
+/* Grid für Aufgaben */
+.task-grid,
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.task {
+  background: #fffae6;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.correct { color: green; font-weight: bold; }
+.incorrect { color: red; font-weight: bold; }
+
+/* Buttons */
+button {
+  padding: 12px 20px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 10px;
+  background: #ffb74d;
+  color: white;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background: #ffa726;
+  transform: scale(1.05);
+}
+
+/* Timer */
+.timer {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #ff6f61;
+  margin: 10px 0;
+}
+
+/* Score */
+#score {
+  font-size: 1.4rem;
+  margin: 10px 0;
+  font-weight: bold;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1024px) {
+  .task-grid,
+  .result-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .task-grid,
+  .result-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  button, input {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .task-grid,
+  .result-grid {
+    grid-template-columns: 1fr;
+  }
+  body {
+    font-size: 16px;
+  }
+}
+.class-group h2, .date-group h3 {
+  margin: 5px 0;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background-color: #ffdca3;
+}
+
+.date-group h3 {
+  background-color: #ffe8b3;
+  margin-left: 15px;
+  font-weight: normal;
+}
