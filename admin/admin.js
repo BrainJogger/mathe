@@ -184,9 +184,21 @@ document.addEventListener("DOMContentLoaded", () => {
     headerDiv.style.justifyContent = "space-between";
     headerDiv.style.alignItems = "center";
 
+    // Punkte berechnen
+    let earned = 0;
+    let total = 0;
+
+    studentResults.forEach(r => {
+      Object.values(r.answers).forEach(a => {
+        total++;
+        if (a.isCorrect) earned++;
+      });
+    });
+
     const nameSpan = document.createElement("span");
     nameSpan.className = "student-name";
-    nameSpan.textContent = studentName;
+    nameSpan.textContent = `${studentName}: ${earned}/${total}`;
+
 
     const buttonGroup = document.createElement("div");
     buttonGroup.style.display = "flex";
