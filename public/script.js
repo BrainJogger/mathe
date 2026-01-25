@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- State ---
   let timerInterval = null;
   let timeLeft = TOTAL_SECONDS;
-  let tasks = {};             
+  let tasks = {};
   let currentPage = 0;
   let answersCache = {};
   let selectedStudent = null; // { id, name, klasse, jahrgang, lehrer }
@@ -30,6 +30,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const scoreEl = document.getElementById("score");
   const correctionsContainer = document.getElementById("corrections");
   const restartBtn = document.getElementById("restartBtn");
+
+  const pageIndicator = document.getElementById("pageIndicator");
 
   // --- Utility ---
   function formatTime(sec) {
@@ -170,17 +172,34 @@ document.addEventListener("DOMContentLoaded", () => {
     renderPagination(Object.keys(tasks).length);
   }
 
+
   function renderPagination(total) {
     paginationDiv.innerHTML = "";
     const totalPages = Math.ceil(total / pageSize);
+
+    // Seitenanzeige
+    pageIndicator.textContent = `Seite ${currentPage + 1} von ${totalPages}`;
+
     for (let i = 0; i < totalPages; i++) {
       const btn = document.createElement("button");
       btn.textContent = (i + 1).toString();
-      btn.disabled = i === currentPage;
+
+      // Aktuelle Seite hervorheben
+      if (i === currentPage) {
+        btn.style.backgroundColor = "#4a90e2"; // Blau
+        btn.style.color = "#fff";
+        btn.style.fontWeight = "bold";
+      } else {
+        btn.style.backgroundColor = ""; // Standard
+        btn.style.color = "";
+        btn.style.fontWeight = "normal";
+      }
+
       btn.addEventListener("click", () => renderPage(i));
       paginationDiv.appendChild(btn);
     }
   }
+
 
   // --- Antworten absenden ---
   async function submitAnswers() {
@@ -219,7 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const err = await res.json().catch(()=>null);
+        const err = await res.json().catch(() => null);
         throw new Error(err && err.error ? err.error : "Fehler beim Absenden");
       }
 
@@ -328,11 +347,16 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // --- NEUE ABFRAGE ---
+    const isCorrect = confirm(`Bist du sicher, dass du ${selectedStudent.name} bist?`);
+    if (!isCorrect) return;
+
     await loadTasks();
     startBox.style.display = "none";
     testDiv.style.display = "block";
     startTimer();
   });
+
 
   submitBtn.addEventListener("click", () => {
     if (!confirm("Antworten jetzt absenden?")) return;

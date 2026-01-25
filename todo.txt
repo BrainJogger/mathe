@@ -1,12 +1,10 @@
-[18:26, 25.1.2026] Kristin Daseking: 
 - „alles löschen“ weg (auch Datum) X
 - ⁠Download nach Datum für alle Schüler X
 - ⁠löschen nach Datum X
 - ⁠löschen nach Jahrgang X
 - ⁠pdf mit Punkte-Klassenübersicht pro Datum X
-- ⁠Einmaleins-Meisterprüfung - Lehrkräfte statt „Admin Dashboard“
-[18:40, 25.1.2026] Kristin Daseking: - Kinder sehen, auf welcher Seite sie sind 
-- ⁠nochmal versuchen wegmachen
-- ⁠“bist Du wirklich …“ vor „Test starten“
-[18:45, 25.1.2026] Kristin Daseking: - Alle Schüler eines Jahrgangs löschen
+- ⁠Einmaleins-Meisterprüfung - Lehrkräfte statt „Admin Dashboard“ X
+- Kinder sehen, auf welcher Seite sie sind X
+- ⁠“bist Du wirklich …“ vor „Test starten“ X
+- Alle Schüler eines Jahrgangs löschen
 - ⁠Schüler eines Jahrgangs verschieben (alle markieren und einzeln markieren) in einen anderen Jahrgang und in andere Klasse
