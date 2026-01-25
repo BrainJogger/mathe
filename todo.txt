@@ -2,7 +2,7 @@
 - „alles löschen“ weg (auch Datum) X
 - ⁠Download nach Datum für alle Schüler X
 - ⁠löschen nach Datum X
-- ⁠löschen nach Jahrgang 
+- ⁠löschen nach Jahrgang X
 - ⁠pdf mit Punkte-Klassenübersicht pro Datum X
 - ⁠Einmaleins-Meisterprüfung - Lehrkräfte statt „Admin Dashboard“
 [18:40, 25.1.2026] Kristin Daseking: - Kinder sehen, auf welcher Seite sie sind 
