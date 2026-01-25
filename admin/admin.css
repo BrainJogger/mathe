@@ -1,4 +1,7 @@
-/* Basis Styles */
+/* ===============================
+   BASIS
+================================ */
+
 body {
   font-family: 'Comic Sans MS', sans-serif;
   background-color: #fffae6;
@@ -12,8 +15,12 @@ header h1 {
   margin: 20px 0;
 }
 
-/* Allgemeine Container */
-.filters, .delete-section {
+/* ===============================
+   FILTER + TOP SECTIONS
+================================ */
+
+.filters,
+.delete-section {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -24,315 +31,204 @@ header h1 {
 .results-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
-/* Klassen-Container */
-.classes-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  margin-top: 20px;
-}
+/* ===============================
+   INPUTS + BUTTONS
+================================ */
 
-/* Jede Klasse als Card */
-.class-group {
-  background-color: #fff8f0;
-  border-radius: 12px;
-  padding: 15px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  transition: transform 0.1s;
-}
-
-.class-group:hover {
-  transform: translateY(-2px);
-}
-
-/* Aufklappbarer Header */
-.class-title {
-  margin: 0 0 10px 0;
-  padding-bottom: 5px;
-  font-size: 1.3rem;
-  cursor: pointer;
-  color: #ff6f61;
-  border-bottom: 2px dashed #ffb347;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/* Schülerliste */
-.class-content ul {
-  list-style: none;
-  padding: 0;
-  margin: 10px 0;
-}
-
-.class-content li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-  background-color: #fff4e0;
-  padding: 6px 10px;
-  border-radius: 8px;
-}
-
-/* Buttons & Input Styles */
-input, select, button {
-  padding: 10px;
-  font-size: 1rem;
-  border-radius: 8px;
+input,
+select,
+button {
+  padding: 8px;
+  font-size: 0.9rem;
+  border-radius: 6px;
   border: 1px solid #ccc;
 }
 
 button {
   cursor: pointer;
-  transition: transform 0.1s, background-color 0.3s ease;
 }
 
-button:hover {
-  transform: scale(1.05);
-  background-color: #ffb347;
-}
-
-/* Gemeinsame Buttons */
 .btn {
-  display: inline-block;
-  padding: 10px 20px;
-  margin-top: 10px;
-  margin-left: 10px;
-  border: none;
+  padding: 6px 12px;
   border-radius: 5px;
   font-weight: bold;
-  text-decoration: none;
   color: white;
-  text-align: center;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  flex: 1 1 auto;
-  min-width: 75px;
-}
-
-.btn-primary { background-color: #007bff; }
-.btn-primary:hover { background-color: #0069d9; }
-.btn-danger { background-color: #dc3545; }
-.btn-danger:hover { background-color: #c82333; }
-.btn-warning { background-color: #ffc107; color: #212529; }
-.btn-warning:hover { background-color: #e0a800; }
-.btn-success { background-color: #1ada2a; color: #212923; }
-
-
-
-.export-btn:hover {
-  background-color: #689f38;
-  transform: scale(1.05);
-}
-
-/* Schüler Card */
-.student-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  background-color: #fffaf5;
-  padding: 12px 16px;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-  transition: transform 0.2s, box-shadow 0.2s;
+  border: none;
   cursor: pointer;
 }
-.student-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+
+.export-btn {
+  background-color: rgb(118, 226, 68);
 }
 
-/* Schüler Header (Name) */
-.student-name {
+.btn-primary { background:#007bff; }
+.btn-danger { background:#dc3545; }
+.btn-warning { background:#ffc107; color:#222; }
+.btn-success { background:#1ada2a; }
+
+.btn-primary:hover { background:#0069d9; }
+.btn-danger:hover { background:#c82333; }
+.btn-warning:hover { background:#e0a800; }
+
+/* ===============================
+   CLASS GROUP
+================================ */
+
+.class-group {
+  background: white;
+  border-radius: 14px;
+  padding: 12px;
+  border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+.class-title {
+  margin: 0 0 8px;
   font-size: 1.1rem;
-  font-weight: 600;
   color: #ff6f61;
-  text-align: left;
-  width: 100%;
-  margin-bottom: 6px;
   cursor: pointer;
 }
 
-/* Buttons Container innerhalb Schüler Card */
-.student-buttons {
-  display: flex;
-  gap: 8px;
-  margin-top: 6px;
-}
+/* ===============================
+   YEAR + DATE CONTAINERS
+================================ */
 
-.student-buttons .btn {
-  padding: 5px 10px;
-  font-size: 0.85rem;
-}
-
-/* Antworten als Grid */
-.student-answers {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr); /* 10 Spalten */
-  gap: 6px;
-  margin-top: 10px;
-  width: 100%;
-}
-
-.student-answers .answer-card {
-  background-color: #fff4e0;
-  border-radius: 10px;
-  padding: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 0.85rem;
-  transition: transform 0.1s, box-shadow 0.2s;
-}
-
-.student-answers .answer-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-}
-
-/* Korrekt/Falsch Markierung */
-.student-answers .answer-card.correct { 
-  background-color: #e6ffed; 
-  border-left: 5px solid #28a745; 
-}
-.student-answers .answer-card.incorrect { 
-  background-color: #ffe6e6; 
-  border-left: 5px solid #dc3545; 
-}
-
-/* Texte in den Antwortkarten */
-.student-answers .answer-card .question { font-weight: 600; color: #ff6f61; }
-.student-answers .answer-card .given { font-weight: 500; color: #333; }
-.student-answers .answer-card .correct-answer { font-size: 0.9rem; color: #555; }
-
-/* Responsive Anpassungen */
-@media (max-width: 900px) {
-  .student-answers { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 600px) {
-  .filters, .delete-section, .button-group { flex-direction: column; align-items: stretch; }
-  input, select, button, .date-input { width: 100%; }
-  .student-answers { grid-template-columns: 1fr; }
-  .student-card { flex-direction: column; align-items: flex-start; }
-  .student-buttons { width: 100%; justify-content: flex-start; margin-top: 5px; }
-}
-/* Ergebnis-Boxen */
-.answer-card {
-  background-color: #fffaf0; /* sanfter Hintergrund */
-  border-radius: 12px;       /* runde Ecken */
-  padding: 6px 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 0.8rem;         /* kleinere Schrift */
-  transition: transform 0.1s, box-shadow 0.2s;
-  position: relative;
-}
-
-/* Hover-Effekt */
-.answer-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-/* Korrekt/Falsch Markierung */
-.answer-card.correct {
-  border-left: 5px solid #28a745;
-  background-color: #e6ffed; /* sanftes Grün */
-}
-.answer-card.incorrect {
-  border-left: 5px solid #dc3545;
-  background-color: #ffe6e6; /* sanftes Rot */
-}
-
-/* Mini-Icons für Korrekt/Falsch */
-.answer-card .question::before {
-  content: "✔️";  /* Standard Icon für korrekt */
-  margin-right: 4px;
-  color: #28a745;
-}
-.answer-card.incorrect .question::before {
-  content: "❌";
-  color: #dc3545;
-}
-
-/* Text innerhalb der Box */
-.answer-card .question {
-  font-weight: 600;
-  color: #ff6f61;
-}
-.answer-card .given {
-  font-weight: 500;
-  color: #333;
-}
-.answer-card .correct-answer {
-  font-size: 0.75rem;
-  color: #555;
-}
-
-/* Klasse innerhalb der Übersicht */
-.year-group {
-  margin-left: 20px;  /* Einrückung für Jahrgang */
-  border-left: 2px dashed #ffb347;
-  padding-left: 10px;
-}
-
-/* Datum innerhalb eines Jahrgangs */
+.year-group,
 .date-group {
-  margin-left: 20px;  /* zusätzliche Einrückung für Datum */
-  border-left: 2px dashed #ffa500;
-  padding-left: 10px;
+  margin-left: 10px;
+  padding: 8px;
+  background: #fffdf8;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  margin-bottom: 8px;
 }
 
-/* Optional: leicht abgerundete Hintergrundfarbe */
-.year-group, .date-group {
-  background-color: #fff8f0;
-  border-radius: 8px;
-  padding: 10px;
+.year-group { background:#fff7ec; }
+.date-group { background:white; }
+
+.year-group h4,
+.date-group h5 {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
 }
 
-/* Löschen-Button in Schülerkarten verkleinern */
-.student-card .btn-danger {
-  padding: 4px 6px;
-  font-size: 0.75rem;
-  border-radius: 5px;
+/* ===============================
+   STUDENT CARD (KOMPAKT)
+================================ */
+
+.student-card {
+  background:#fffaf5;
+  padding:6px 8px;
+  border-radius:8px;
+  border:1px solid rgba(0,0,0,0.05);
+  box-shadow:0 1px 3px rgba(0,0,0,0.08);
+  margin-bottom:6px;
 }
 
-/* 🔘 Sehr kompakte Mini-Buttons in Schülerkarten */
-.student-card .student-buttons button {
-  all: unset;                 /* Reset bleibt wichtig */
-  min-width: 48px;            /* 👈 schmaler */
-  height: 22px;               /* 👈 niedriger */
-  padding: 0 4px;             /* 👈 weniger Innenabstand */
-  font-size: 0.65rem;         /* 👈 kleinere Schrift */
-  line-height: 1;
-  border-radius: 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  cursor: pointer;
-  color: white;
+/* Name + Punkte */
+
+.student-name {
+  font-size:0.85rem;
+  font-weight:600;
+  color:#ff6f61;
+  cursor:pointer;
 }
 
-/* Farben */
-.student-card .export-btn {
-  background-color: #8bc34a;
-}
-.student-card .export-btn:hover {
-  background-color: #689f38;
+/* Datum */
+
+.student-card div:nth-child(2) {
+  font-size:0.7rem;
+  margin-bottom:4px;
 }
 
-.student-card .btn-danger {
-  background-color: #dc3545;
+/* Mini Buttons */
+
+.student-card button {
+  padding:2px 6px !important;
+  font-size:0.65rem !important;
+  height:20px;
 }
-.student-card .btn-danger:hover {
-  background-color: #c82333;
+
+/* ===============================
+   ANSWERS GRID
+================================ */
+
+.student-answers {
+  display:grid;
+  grid-template-columns:repeat(10,1fr);
+  gap:4px;
+  margin-top:6px;
+}
+
+/* Einzelne Antwort */
+
+.answer-card {
+  padding:4px 6px;
+  border-radius:6px;
+  font-size:0.7rem;
+  background:#fffaf0;
+  box-shadow:0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Correct / Incorrect */
+
+.answer-card.correct {
+  background:#e6ffed;
+  border-left:4px solid #28a745;
+}
+
+.answer-card.incorrect {
+  background:#ffe6e6;
+  border-left:4px solid #dc3545;
+}
+
+/* Texte */
+
+.answer-card .question {
+  font-weight:600;
+  color:#ff6f61;
+}
+
+.answer-card .given {
+  font-size:0.65rem;
+}
+
+.answer-card .correct-answer {
+  font-size:0.6rem;
+  color:#555;
+}
+
+/* Icons */
+
+.answer-card .question::before {
+  content:"✔️";
+  margin-right:4px;
+}
+
+.answer-card.incorrect .question::before {
+  content:"❌";
+}
+
+/* ===============================
+   RESPONSIVE
+================================ */
+
+@media (max-width:900px){
+  .student-answers { grid-template-columns:repeat(2,1fr); }
+}
+
+@media (max-width:600px){
+  .student-answers { grid-template-columns:1fr; }
+  .filters,.delete-section { flex-direction:column; }
+}
+
+/* Hover deaktiviert (ruhig 🙂) */
+
+.student-card:hover,
+.answer-card:hover {
+  transform:none;
 }
