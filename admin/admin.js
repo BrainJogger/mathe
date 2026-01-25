@@ -39,7 +39,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderResults() {
     resultsContainer.innerHTML = "";
 
-    // Filter anwenden
     let filteredResults = [...results];
     if (searchInput.value) {
       filteredResults = filteredResults.filter(r =>
@@ -53,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
       filteredResults = filteredResults.filter(r => r.submittedAt.startsWith(dateFilter.value));
     }
 
-    const groupBy = groupingSelect.value; // "date" oder "name"
+    const groupBy = groupingSelect.value;
 
     // Gruppieren
     const grouped = {};
@@ -70,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!grouped[cls][year][date]) grouped[cls][year][date] = {};
         if (!grouped[cls][year][date][student]) grouped[cls][year][date][student] = [];
         grouped[cls][year][date][student].push(r);
-      } else { // groupBy "name"
+      } else {
         if (!grouped[cls][year][student]) grouped[cls][year][student] = {};
         if (!grouped[cls][year][student][date]) grouped[cls][year][student][date] = [];
         grouped[cls][year][student][date].push(r);
@@ -88,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const clsContent = document.createElement("div");
       clsContent.className = "class-content";
-      clsContent.style.display = "none"; // standardmäßig eingeklappt
+      clsContent.style.display = "none";
 
       Object.keys(grouped[cls]).sort().forEach(year => {
         const yearGroup = document.createElement("div");
@@ -107,10 +106,23 @@ document.addEventListener("DOMContentLoaded", () => {
             const dateGroup = document.createElement("div");
             dateGroup.className = "date-group";
 
+            const dateHeader = document.createElement("div");
+            dateHeader.style.display = "flex";
+            dateHeader.style.justifyContent = "space-between";
+            dateHeader.style.alignItems = "center";
+
             const dateTitle = document.createElement("h5");
             dateTitle.className = "class-title";
             dateTitle.textContent = `Datum: ${date}`;
-            dateGroup.appendChild(dateTitle);
+            dateTitle.style.cursor = "pointer";
+
+            const dateDownloadBtn = document.createElement("button");
+            dateDownloadBtn.className = "btn export-btn";
+            dateDownloadBtn.textContent = "📄 PDF";
+
+            dateHeader.appendChild(dateTitle);
+            dateHeader.appendChild(dateDownloadBtn);
+            dateGroup.appendChild(dateHeader);
 
             const dateContent = document.createElement("div");
             dateContent.style.display = "none";
@@ -119,16 +131,21 @@ document.addEventListener("DOMContentLoaded", () => {
               appendStudentCard(dateContent, grouped[cls][year][date][studentName], studentName, date);
             });
 
-            dateGroup.appendChild(dateContent);
+            // PDF Export für alle Schüler
+            dateDownloadBtn.addEventListener("click", (e) => {
+              e.stopPropagation(); // verhindert Toggle
+              exportDatePDF(grouped[cls][year][date], cls, year, date);
+            });
 
-            dateTitle.style.cursor = "pointer";
+            // Toggle für Datumsliste
             dateTitle.addEventListener("click", () => {
               dateContent.style.display = dateContent.style.display === "none" ? "grid" : "none";
             });
 
+            dateGroup.appendChild(dateContent);
             yearContent.appendChild(dateGroup);
           });
-        } else { // groupBy "name"
+        } else {
           Object.keys(grouped[cls][year]).sort().forEach(studentName => {
             const studentGroupContainer = document.createElement("div");
             studentGroupContainer.className = "student-name-group";
@@ -184,28 +201,20 @@ document.addEventListener("DOMContentLoaded", () => {
     headerDiv.style.justifyContent = "space-between";
     headerDiv.style.alignItems = "center";
 
-    // Punkte berechnen
     let earned = 0;
     let total = 0;
-
-    studentResults.forEach(r => {
-      Object.values(r.answers).forEach(a => {
-        total++;
-        if (a.isCorrect) earned++;
-      });
-    });
+    studentResults.forEach(r => Object.values(r.answers).forEach(a => { total++; if(a.isCorrect) earned++; }));
 
     const nameSpan = document.createElement("span");
     nameSpan.className = "student-name";
     nameSpan.textContent = `${studentName}: ${earned}/${total}`;
-
 
     const buttonGroup = document.createElement("div");
     buttonGroup.style.display = "flex";
     buttonGroup.style.gap = "5px";
 
     const downloadBtn = document.createElement("button");
-    downloadBtn.className = "btn export-btn ";
+    downloadBtn.className = "btn export-btn";
     downloadBtn.textContent = "📄 PDF";
 
     const deleteBtn = document.createElement("button");
@@ -225,15 +234,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const answersContainer = document.createElement("div");
     answersContainer.className = "student-answers";
-    answersContainer.style.display = "none"; // Eingeklappt starten
-    answersContainer.style.gridTemplateColumns = "repeat(10, 1fr)";
+    answersContainer.style.display = "none";
+    answersContainer.style.gridTemplateColumns = "repeat(10,1fr)";
     answersContainer.style.gap = "5px";
 
     studentResults.forEach(result => {
       Object.values(result.answers).forEach(ansObj => {
         const li = document.createElement("div");
         li.className = `answer-card ${ansObj.isCorrect ? "correct" : "incorrect"}`;
-        li.style.fontSize = "0.9em"; // größere Schrift
+        li.style.fontSize = "0.9em";
 
         const questionDiv = document.createElement("div");
         questionDiv.className = "question";
@@ -263,62 +272,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     downloadBtn.addEventListener("click", () => {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF('p', 'pt', 'a4');
-      const pageWidth = doc.internal.pageSize.width;
-      const pageHeight = doc.internal.pageSize.height;
-      const margin = 20;
-      const cols = 5;
-      const colWidth = (pageWidth - margin * 2 - (cols - 1) * 5) / cols;
-      const rowHeight = 28;
-      const fontSize = 7;
-
-      doc.setFontSize(14);
-
-      let totalPoints = 0;
-      studentResults.forEach(result => {
-        Object.values(result.answers).forEach(ans => {
-          if (ans.isCorrect) totalPoints++;
-        });
-      });
-
-      doc.text(`Ergebnisse von ${studentName} (Gesamtpunkte: ${totalPoints})`, margin, 20);
-      doc.setFontSize(10);
-      doc.text(`Datum: ${date}`, margin, 35);
-      doc.setFontSize(fontSize);
-
-      let x = margin;
-      let y = 50;
-      const answers = [];
-      studentResults.forEach(result => {
-        Object.values(result.answers).forEach(ansObj => answers.push(ansObj));
-      });
-
-      answers.forEach((ansObj, i) => {
-        if (y + rowHeight > pageHeight - margin) {
-          doc.addPage();
-          y = margin + 30;
-          x = margin;
-        }
-        doc.setFillColor(ansObj.isCorrect ? 230 : 255, ansObj.isCorrect ? 255 : 230, ansObj.isCorrect ? 230 : 230);
-        doc.rect(x, y, colWidth, rowHeight, 'F');
-        doc.setTextColor(0, 0, 0);
-        doc.text(ansObj.question, x + 2, y + 8, { maxWidth: colWidth - 4 });
-        doc.text(`Antwort: ${ansObj.given || "-"}`, x + 2, y + 16, { maxWidth: colWidth - 4 });
-        doc.text(`Richtig: ${ansObj.correct}`, x + 2, y + 24, { maxWidth: colWidth - 4 });
-        x += colWidth + 5;
-        if ((i + 1) % cols === 0) {
-          x = margin;
-          y += rowHeight + 3;
-        }
-      });
-
-      doc.save(`${studentName}_Ergebnisse.pdf`);
+      exportStudentPDF(studentResults, studentName, date);
     });
 
     deleteBtn.addEventListener("click", async () => {
       if (!confirm(`Möchtest du alle Ergebnisse von ${studentName} wirklich löschen?`)) return;
-
       try {
         for (const result of studentResults) {
           await fetch(`/results/${result.id}`, { method: "DELETE" });
@@ -333,6 +291,121 @@ document.addEventListener("DOMContentLoaded", () => {
 
     container.appendChild(studentGroup);
   }
+
+  // Einzel-Download (unverändert)
+  function exportStudentPDF(studentResults, studentName, date) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'pt', 'a4');
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const margin = 20;
+    const cols = 5;
+    const rowHeight = 28;
+    const fontSize = 7;
+
+    studentResults.forEach((result, idx) => {
+      if (idx > 0) doc.addPage();
+      const answers = Object.values(result.answers);
+      let x = margin;
+      let y = 60;
+
+      let totalPoints = 0;
+      answers.forEach(a => { if(a.isCorrect) totalPoints++; });
+
+      doc.setFontSize(14);
+      doc.text(`${studentName}`, margin, 30);
+      doc.setFontSize(10);
+      doc.text(`Datum: ${date} | Gesamtpunkte: ${totalPoints}`, margin, 45);
+      doc.setFontSize(fontSize);
+
+      answers.forEach((ansObj, i) => {
+        if (y + rowHeight > pageHeight - margin) {
+          doc.addPage();
+          y = margin + 30;
+          x = margin;
+        }
+        const colWidth = (pageWidth - margin*2 - (cols-1)*2) / cols;
+        doc.setFillColor(ansObj.isCorrect ? 230 : 255, ansObj.isCorrect ? 255 : 230, ansObj.isCorrect ? 230 : 230);
+        doc.rect(x, y, colWidth, rowHeight, 'F');
+        doc.setTextColor(0,0,0);
+        doc.text(ansObj.question, x+2, y+8, { maxWidth: colWidth-4 });
+        doc.text(`Antwort: ${ansObj.given || "-"}`, x+2, y+16, { maxWidth: colWidth-4 });
+        doc.text(`Richtig: ${ansObj.correct}`, x+2, y+24, { maxWidth: colWidth-4 });
+
+        x += colWidth + 2;
+        if ((i+1) % cols === 0) {
+          x = margin;
+          y += rowHeight + 3;
+        }
+      });
+    });
+
+    doc.save(`${studentName}_Ergebnisse.pdf`);
+  }
+
+  // Datums-Download: je 1 Schüler pro Seite, 5 Spalten x 20 Reihen
+  function exportDatePDF(dateGroupData, cls, year, date) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'pt', 'a4');
+
+  const students = Object.keys(dateGroupData).sort();
+  let firstPage = true;
+
+  students.forEach(studentName => {
+    const studentResultsArr = dateGroupData[studentName]; // Array von Result-Objekten
+    if (!firstPage) doc.addPage();
+    firstPage = false;
+
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const margin = 20;
+    const cols = 5;
+    const rowHeight = 28;
+    const fontSize = 7;
+
+    let x = margin;
+    let y = 60;
+
+    // Alle answers eines Schülers sammeln
+    const answers = [];
+    studentResultsArr.forEach(r => {
+      Object.values(r.answers).forEach(a => answers.push(a));
+    });
+
+    let totalPoints = 0;
+    answers.forEach(a => { if(a.isCorrect) totalPoints++; });
+
+    doc.setFontSize(14);
+    doc.text(`${studentName}`, margin, 30);
+    doc.setFontSize(10);
+    doc.text(`Datum: ${date} | Gesamtpunkte: ${totalPoints}`, margin, 45);
+    doc.setFontSize(fontSize);
+
+    answers.forEach((ansObj, i) => {
+      if (y + rowHeight > pageHeight - margin) {
+        doc.addPage();
+        y = margin + 30;
+        x = margin;
+      }
+      const colWidth = (pageWidth - margin*2 - (cols-1)*2) / cols;
+      doc.setFillColor(ansObj.isCorrect ? 230 : 255, ansObj.isCorrect ? 255 : 230, ansObj.isCorrect ? 230 : 230);
+      doc.rect(x, y, colWidth, rowHeight, 'F');
+      doc.setTextColor(0,0,0);
+      doc.text(ansObj.question, x+2, y+8, { maxWidth: colWidth-4 });
+      doc.text(`Antwort: ${ansObj.given || "-"}`, x+2, y+16, { maxWidth: colWidth-4 });
+      doc.text(`Richtig: ${ansObj.correct}`, x+2, y+24, { maxWidth: colWidth-4 });
+
+      x += colWidth + 2;
+      if ((i+1) % cols === 0) {
+        x = margin;
+        y += rowHeight + 3;
+      }
+    });
+  });
+
+  doc.save(`Klasse_${cls}_Jahrgang_${year}_${date}.pdf`);
+}
+
 
   searchInput.addEventListener("input", renderResults);
   classFilter.addEventListener("change", renderResults);
