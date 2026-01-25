@@ -37,207 +37,228 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderResults() {
-    resultsContainer.innerHTML = "";
+  resultsContainer.innerHTML = "";
 
-    let filteredResults = [...results];
-    if (searchInput.value) {
-      filteredResults = filteredResults.filter(r =>
-        r.name.toLowerCase().includes(searchInput.value.toLowerCase())
-      );
+  let filteredResults = [...results];
+  if (searchInput.value) {
+    filteredResults = filteredResults.filter(r =>
+      r.name.toLowerCase().includes(searchInput.value.toLowerCase())
+    );
+  }
+  if (classFilter.value) {
+    filteredResults = filteredResults.filter(r => r.klasse === classFilter.value);
+  }
+  if (dateFilter.value) {
+    filteredResults = filteredResults.filter(r => r.submittedAt.startsWith(dateFilter.value));
+  }
+
+  const groupBy = groupingSelect.value;
+
+  // Gruppieren
+  const grouped = {};
+  filteredResults.forEach(r => {
+    const cls = r.klasse;
+    const year = r.jahrgang;
+    const date = r.submittedAt.split("T")[0];
+    const student = r.name;
+
+    if (!grouped[cls]) grouped[cls] = {};
+    if (!grouped[cls][year]) grouped[cls][year] = {};
+
+    if (groupBy === "date") {
+      if (!grouped[cls][year][date]) grouped[cls][year][date] = {};
+      if (!grouped[cls][year][date][student]) grouped[cls][year][date][student] = [];
+      grouped[cls][year][date][student].push(r);
+    } else {
+      if (!grouped[cls][year][student]) grouped[cls][year][student] = {};
+      if (!grouped[cls][year][student][date]) grouped[cls][year][student][date] = [];
+      grouped[cls][year][student][date].push(r);
     }
-    if (classFilter.value) {
-      filteredResults = filteredResults.filter(r => r.klasse === classFilter.value);
-    }
-    if (dateFilter.value) {
-      filteredResults = filteredResults.filter(r => r.submittedAt.startsWith(dateFilter.value));
-    }
+  });
 
-    const groupBy = groupingSelect.value;
+  // Klassen
+  Object.keys(grouped).sort().forEach(cls => {
+    const clsGroup = document.createElement("div");
+    clsGroup.className = "class-group";
 
-    const grouped = {};
-    filteredResults.forEach(r => {
-      const cls = r.klasse;
-      const year = r.jahrgang;
-      const date = r.submittedAt.split("T")[0];
-      const student = r.name;
+    const clsTitle = document.createElement("h3");
+    clsTitle.className = "class-title";
+    clsTitle.textContent = `Klasse ${cls}`;
+    clsGroup.appendChild(clsTitle);
 
-      if (!grouped[cls]) grouped[cls] = {};
-      if (!grouped[cls][year]) grouped[cls][year] = {};
+    const clsContent = document.createElement("div");
+    clsContent.className = "class-content";
+    clsContent.style.display = "none";
+
+    // Jahrgänge
+    Object.keys(grouped[cls]).sort().forEach(year => {
+      const yearGroup = document.createElement("div");
+      yearGroup.className = "year-group";
+
+      const yearTitle = document.createElement("h4");
+      yearTitle.className = "class-title";
+      yearTitle.textContent = `Jahrgang ${year}`;
+
+      // Button: Jahrgang löschen
+      const yearDeleteBtn = document.createElement("button");
+      yearDeleteBtn.className = "btn btn-danger";
+      yearDeleteBtn.textContent = `🗑 Ergebnisse Klasse ${cls}, Jahrgang ${year} löschen`;
+      yearDeleteBtn.style.marginLeft = "10px";
+      yearTitle.appendChild(yearDeleteBtn);
+
+      yearDeleteBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        if (!confirm(`Möchtest du wirklich alle Ergebnisse der Klasse ${cls} im Jahrgang ${year} löschen?`)) return;
+        try {
+          let allResults = [];
+          Object.values(grouped[cls][year]).forEach(dateOrStudentObj => {
+            if (Array.isArray(dateOrStudentObj)) {
+              allResults.push(...dateOrStudentObj);
+            } else if (typeof dateOrStudentObj === "object") {
+              allResults.push(...Object.values(dateOrStudentObj).flat());
+            }
+          });
+          for (const result of allResults) {
+            await fetch(`/results/${result.id}`, { method: "DELETE" });
+          }
+          results = results.filter(r => !(r.klasse === cls && r.jahrgang === year));
+          renderResults();
+        } catch (err) {
+          console.error("Fehler beim Löschen:", err);
+          alert("Löschen fehlgeschlagen");
+        }
+      });
+
+      yearGroup.appendChild(yearTitle);
+
+      const yearContent = document.createElement("div");
+      yearContent.style.display = "none";
 
       if (groupBy === "date") {
-        if (!grouped[cls][year][date]) grouped[cls][year][date] = {};
-        if (!grouped[cls][year][date][student]) grouped[cls][year][date][student] = [];
-        grouped[cls][year][date][student].push(r);
+        Object.keys(grouped[cls][year]).sort().forEach(date => {
+          const dateGroup = document.createElement("div");
+          dateGroup.className = "date-group";
+
+          const dateTitle = document.createElement("h5");
+          dateTitle.className = "class-title";
+          dateTitle.textContent = `Datum: ${date}`;
+          dateTitle.style.display = "flex";
+          dateTitle.style.justifyContent = "space-between";
+          dateTitle.style.alignItems = "center";
+
+          // Buttons Datumsebene
+          const dateDownloadBtn = document.createElement("button");
+          dateDownloadBtn.className = "btn export-btn";
+          dateDownloadBtn.textContent = "📄 PDF";
+
+          const dateDownloadSummaryBtn = document.createElement("button");
+          dateDownloadSummaryBtn.className = "btn export-btn";
+          dateDownloadSummaryBtn.textContent = "📊 Übersicht PDF";
+
+          const dateDeleteBtn = document.createElement("button");
+          dateDeleteBtn.className = "btn btn-danger";
+          dateDeleteBtn.textContent = "🗑 Alle löschen";
+
+          const buttonContainer = document.createElement("div");
+          buttonContainer.style.display = "flex";
+          buttonContainer.style.gap = "5px";
+          buttonContainer.appendChild(dateDownloadBtn);
+          buttonContainer.appendChild(dateDownloadSummaryBtn);
+          buttonContainer.appendChild(dateDeleteBtn);
+          dateTitle.appendChild(buttonContainer);
+
+          const dateContent = document.createElement("div");
+          dateContent.style.display = "none";
+
+          Object.keys(grouped[cls][year][date]).sort().forEach(studentName => {
+            appendStudentCard(dateContent, grouped[cls][year][date][studentName], studentName, date);
+          });
+
+          // PDF Export Datum
+          dateDownloadBtn.addEventListener("click", e => {
+            e.stopPropagation();
+            exportDatePDF(grouped[cls][year][date], cls, year, date);
+          });
+          dateDownloadSummaryBtn.addEventListener("click", e => {
+            e.stopPropagation();
+            exportDateSummaryPDF(grouped[cls][year][date], cls, year, date);
+          });
+
+          // Löschen Datum
+          dateDeleteBtn.addEventListener("click", async e => {
+            e.stopPropagation();
+            if (!confirm(`Möchtest du wirklich alle Ergebnisse der Klasse ${cls}, Jahrgang ${year} am ${date} löschen?`)) return;
+            try {
+              const studentResults = Object.values(grouped[cls][year][date]).flat();
+              for (const resultsArr of studentResults) {
+                for (const result of resultsArr) {
+                  await fetch(`/results/${result.id}`, { method: "DELETE" });
+                }
+              }
+              results = results.filter(r => !(r.klasse === cls && r.jahrgang === year && r.submittedAt.startsWith(date)));
+              renderResults();
+            } catch (err) {
+              console.error("Fehler beim Löschen:", err);
+              alert("Löschen fehlgeschlagen");
+            }
+          });
+
+          dateGroup.appendChild(dateTitle);
+          dateGroup.appendChild(dateContent);
+          dateTitle.style.cursor = "pointer";
+          dateTitle.addEventListener("click", () => {
+            dateContent.style.display = dateContent.style.display === "none" ? "grid" : "none";
+          });
+
+          yearContent.appendChild(dateGroup);
+        });
       } else {
-        if (!grouped[cls][year][student]) grouped[cls][year][student] = {};
-        if (!grouped[cls][year][student][date]) grouped[cls][year][student][date] = [];
-        grouped[cls][year][student][date].push(r);
+        Object.keys(grouped[cls][year]).sort().forEach(studentName => {
+          const studentGroupContainer = document.createElement("div");
+          studentGroupContainer.className = "student-name-group";
+
+          const studentTitle = document.createElement("h5");
+          studentTitle.textContent = studentName;
+          studentTitle.style.cursor = "pointer";
+          studentGroupContainer.appendChild(studentTitle);
+
+          const studentDatesContainer = document.createElement("div");
+          studentDatesContainer.style.display = "none";
+
+          Object.keys(grouped[cls][year][studentName]).sort().forEach(date => {
+            appendStudentCard(studentDatesContainer, grouped[cls][year][studentName][date], studentName, date);
+          });
+
+          studentTitle.addEventListener("click", () => {
+            studentDatesContainer.style.display = studentDatesContainer.style.display === "none" ? "grid" : "none";
+          });
+
+          studentGroupContainer.appendChild(studentDatesContainer);
+          yearContent.appendChild(studentGroupContainer);
+        });
       }
+
+      yearGroup.appendChild(yearContent);
+
+      yearTitle.style.cursor = "pointer";
+      yearTitle.addEventListener("click", () => {
+        yearContent.style.display = yearContent.style.display === "none" ? "block" : "none";
+      });
+
+      clsContent.appendChild(yearGroup);
     });
 
-    Object.keys(grouped).sort().forEach(cls => {
-      const clsGroup = document.createElement("div");
-      clsGroup.className = "class-group";
+    clsGroup.appendChild(clsContent);
 
-      const clsTitle = document.createElement("h3");
-      clsTitle.className = "class-title";
-      clsTitle.textContent = `Klasse ${cls}`;
-      clsGroup.appendChild(clsTitle);
-
-      const clsContent = document.createElement("div");
-      clsContent.className = "class-content";
-      clsContent.style.display = "none";
-
-      Object.keys(grouped[cls]).sort().forEach(year => {
-        const yearGroup = document.createElement("div");
-        yearGroup.className = "year-group";
-
-        const yearTitle = document.createElement("h4");
-        yearTitle.className = "class-title";
-        yearTitle.textContent = `Jahrgang ${year}`;
-        yearGroup.appendChild(yearTitle);
-
-        const yearContent = document.createElement("div");
-        yearContent.style.display = "none";
-
-        if (groupBy === "date") {
-  Object.keys(grouped[cls][year]).sort().forEach(date => {
-    const dateGroup = document.createElement("div");
-    dateGroup.className = "date-group";
-
-    const dateTitle = document.createElement("h5");
-    dateTitle.className = "class-title";
-    dateTitle.textContent = `Datum: ${date}`;
-    dateTitle.style.display = "flex";
-    dateTitle.style.justifyContent = "space-between";
-    dateTitle.style.alignItems = "center";
-
-    // Button: alle Schüler pro Datum PDF
-    const dateDownloadBtn = document.createElement("button");
-    dateDownloadBtn.className = "btn export-btn";
-    dateDownloadBtn.textContent = "📄 PDF";
-
-    // Button: Übersicht Gesamtpunkte PDF
-    const dateDownloadSummaryBtn = document.createElement("button");
-    dateDownloadSummaryBtn.className = "btn export-btn";
-    dateDownloadSummaryBtn.textContent = "📊 Übersicht PDF";
-
-    // Button: alle Ergebnisse löschen für dieses Datum
-    const dateDeleteBtn = document.createElement("button");
-    dateDeleteBtn.className = "btn btn-danger";
-    dateDeleteBtn.textContent = "🗑 Alle löschen";
-
-    const buttonContainer = document.createElement("div");
-    buttonContainer.style.display = "flex";
-    buttonContainer.style.gap = "5px";
-    buttonContainer.appendChild(dateDownloadBtn);
-    buttonContainer.appendChild(dateDownloadSummaryBtn);
-    buttonContainer.appendChild(dateDeleteBtn);
-    dateTitle.appendChild(buttonContainer);
-
-    const dateContent = document.createElement("div");
-    dateContent.style.display = "none";
-
-    Object.keys(grouped[cls][year][date]).sort().forEach(studentName => {
-      appendStudentCard(dateContent, grouped[cls][year][date][studentName], studentName, date);
+    clsTitle.style.cursor = "pointer";
+    clsTitle.addEventListener("click", () => {
+      clsContent.style.display = clsContent.style.display === "none" ? "block" : "none";
     });
 
-    // PDF Export für alle Schüler pro Datum, je 1 Schüler pro Seite
-    dateDownloadBtn.addEventListener("click", e => {
-      e.stopPropagation();
-      exportDatePDF(grouped[cls][year][date], cls, year, date);
-    });
-
-    // PDF Übersicht Gesamtpunkte pro Datum
-    dateDownloadSummaryBtn.addEventListener("click", e => {
-      e.stopPropagation();
-      exportDateSummaryPDF(grouped[cls][year][date], cls, year, date);
-    });
-
-    // Löschen aller Ergebnisse für dieses Datum
-    // Löschen aller Ergebnisse für dieses Datum
-dateDeleteBtn.addEventListener("click", async e => {
-  e.stopPropagation();
-  if (!confirm(`Möchtest du wirklich alle Ergebnisse der Klasse ${cls}, Jahrgang ${year} am ${date} löschen?`)) return;
-  try {
-    // Alle verschachtelten Arrays flach machen
-    let allResults = Object.values(grouped[cls][year][date]).map(v => {
-      if (Array.isArray(v)) return v;
-      if (typeof v === "object") return Object.values(v).flat();
-      return [];
-    }).flat();
-
-    for (const result of allResults) {
-      await fetch(`/results/${result.id}`, { method: "DELETE" });
-    }
-
-    // Globales results Array aktualisieren
-    results = results.filter(r => !(r.klasse === cls && r.jahrgang === year && r.submittedAt.startsWith(date)));
-    renderResults();
-  } catch (err) {
-    console.error("Fehler beim Löschen:", err);
-    alert("Löschen fehlgeschlagen");
-  }
-});
-
-
-    dateGroup.appendChild(dateTitle);
-    dateGroup.appendChild(dateContent);
-
-    dateTitle.style.cursor = "pointer";
-    dateTitle.addEventListener("click", () => {
-      dateContent.style.display = dateContent.style.display === "none" ? "grid" : "none";
-    });
-
-    yearContent.appendChild(dateGroup);
+    resultsContainer.appendChild(clsGroup);
   });
 }
- else {
-          Object.keys(grouped[cls][year]).sort().forEach(studentName => {
-            const studentGroupContainer = document.createElement("div");
-            studentGroupContainer.className = "student-name-group";
 
-            const studentTitle = document.createElement("h5");
-            studentTitle.textContent = studentName;
-            studentTitle.style.cursor = "pointer";
-            studentGroupContainer.appendChild(studentTitle);
-
-            const studentDatesContainer = document.createElement("div");
-            studentDatesContainer.style.display = "none";
-
-            Object.keys(grouped[cls][year][studentName]).sort().forEach(date => {
-              appendStudentCard(studentDatesContainer, grouped[cls][year][studentName][date], studentName, date);
-            });
-
-            studentTitle.addEventListener("click", () => {
-              studentDatesContainer.style.display = studentDatesContainer.style.display === "none" ? "grid" : "none";
-            });
-
-            studentGroupContainer.appendChild(studentDatesContainer);
-            yearContent.appendChild(studentGroupContainer);
-          });
-        }
-
-        yearGroup.appendChild(yearContent);
-
-        yearTitle.style.cursor = "pointer";
-        yearTitle.addEventListener("click", () => {
-          yearContent.style.display = yearContent.style.display === "none" ? "block" : "none";
-        });
-
-        clsContent.appendChild(yearGroup);
-      });
-
-      clsGroup.appendChild(clsContent);
-
-      clsTitle.style.cursor = "pointer";
-      clsTitle.addEventListener("click", () => {
-        clsContent.style.display = clsContent.style.display === "none" ? "block" : "none";
-      });
-
-      resultsContainer.appendChild(clsGroup);
-    });
-  }
 
   function appendStudentCard(container, studentResults, studentName, date) {
     const studentGroup = document.createElement("div");
