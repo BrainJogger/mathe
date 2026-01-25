@@ -101,64 +101,98 @@ document.addEventListener("DOMContentLoaded", () => {
         yearContent.style.display = "none";
 
         if (groupBy === "date") {
-          Object.keys(grouped[cls][year]).sort().forEach(date => {
-            const dateGroup = document.createElement("div");
-            dateGroup.className = "date-group";
+  Object.keys(grouped[cls][year]).sort().forEach(date => {
+    const dateGroup = document.createElement("div");
+    dateGroup.className = "date-group";
 
-            const dateTitle = document.createElement("h5");
-            dateTitle.className = "class-title";
-            dateTitle.textContent = `Datum: ${date}`;
-            dateTitle.style.display = "flex";
-            dateTitle.style.justifyContent = "space-between";
-            dateTitle.style.alignItems = "center";
+    const dateTitle = document.createElement("h5");
+    dateTitle.className = "class-title";
+    dateTitle.textContent = `Datum: ${date}`;
+    dateTitle.style.display = "flex";
+    dateTitle.style.justifyContent = "space-between";
+    dateTitle.style.alignItems = "center";
 
-            // Button: alle Schüler pro Datum PDF
-            const dateDownloadBtn = document.createElement("button");
-            dateDownloadBtn.className = "btn export-btn";
-            dateDownloadBtn.textContent = "📄 PDF";
+    // Button: alle Schüler pro Datum PDF
+    const dateDownloadBtn = document.createElement("button");
+    dateDownloadBtn.className = "btn export-btn";
+    dateDownloadBtn.textContent = "📄 PDF";
 
-            // Button: Übersicht Gesamtpunkte PDF
-            const dateDownloadSummaryBtn = document.createElement("button");
-            dateDownloadSummaryBtn.className = "btn export-btn";
-            dateDownloadSummaryBtn.textContent = "📊 Übersicht PDF";
+    // Button: Übersicht Gesamtpunkte PDF
+    const dateDownloadSummaryBtn = document.createElement("button");
+    dateDownloadSummaryBtn.className = "btn export-btn";
+    dateDownloadSummaryBtn.textContent = "📊 Übersicht PDF";
 
-            const buttonContainer = document.createElement("div");
-            buttonContainer.style.display = "flex";
-            buttonContainer.style.gap = "5px";
-            buttonContainer.appendChild(dateDownloadBtn);
-            buttonContainer.appendChild(dateDownloadSummaryBtn);
-            dateTitle.appendChild(buttonContainer);
+    // Button: alle Ergebnisse löschen für dieses Datum
+    const dateDeleteBtn = document.createElement("button");
+    dateDeleteBtn.className = "btn btn-danger";
+    dateDeleteBtn.textContent = "🗑 Alle löschen";
 
-            const dateContent = document.createElement("div");
-            dateContent.style.display = "none";
+    const buttonContainer = document.createElement("div");
+    buttonContainer.style.display = "flex";
+    buttonContainer.style.gap = "5px";
+    buttonContainer.appendChild(dateDownloadBtn);
+    buttonContainer.appendChild(dateDownloadSummaryBtn);
+    buttonContainer.appendChild(dateDeleteBtn);
+    dateTitle.appendChild(buttonContainer);
 
-            Object.keys(grouped[cls][year][date]).sort().forEach(studentName => {
-              appendStudentCard(dateContent, grouped[cls][year][date][studentName], studentName, date);
-            });
+    const dateContent = document.createElement("div");
+    dateContent.style.display = "none";
 
-            // PDF Export für alle Schüler pro Datum, je 1 Schüler pro Seite
-            dateDownloadBtn.addEventListener("click", e => {
-              e.stopPropagation();
-              exportDatePDF(grouped[cls][year][date], cls, year, date);
-            });
+    Object.keys(grouped[cls][year][date]).sort().forEach(studentName => {
+      appendStudentCard(dateContent, grouped[cls][year][date][studentName], studentName, date);
+    });
 
-            // PDF Übersicht Gesamtpunkte pro Datum
-            dateDownloadSummaryBtn.addEventListener("click", e => {
-              e.stopPropagation();
-              exportDateSummaryPDF(grouped[cls][year][date], cls, year, date);
-            });
+    // PDF Export für alle Schüler pro Datum, je 1 Schüler pro Seite
+    dateDownloadBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      exportDatePDF(grouped[cls][year][date], cls, year, date);
+    });
 
-            dateGroup.appendChild(dateTitle);
-            dateGroup.appendChild(dateContent);
+    // PDF Übersicht Gesamtpunkte pro Datum
+    dateDownloadSummaryBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      exportDateSummaryPDF(grouped[cls][year][date], cls, year, date);
+    });
 
-            dateTitle.style.cursor = "pointer";
-            dateTitle.addEventListener("click", () => {
-              dateContent.style.display = dateContent.style.display === "none" ? "grid" : "none";
-            });
+    // Löschen aller Ergebnisse für dieses Datum
+    // Löschen aller Ergebnisse für dieses Datum
+dateDeleteBtn.addEventListener("click", async e => {
+  e.stopPropagation();
+  if (!confirm(`Möchtest du wirklich alle Ergebnisse der Klasse ${cls}, Jahrgang ${year} am ${date} löschen?`)) return;
+  try {
+    // Alle verschachtelten Arrays flach machen
+    let allResults = Object.values(grouped[cls][year][date]).map(v => {
+      if (Array.isArray(v)) return v;
+      if (typeof v === "object") return Object.values(v).flat();
+      return [];
+    }).flat();
 
-            yearContent.appendChild(dateGroup);
-          });
-        } else {
+    for (const result of allResults) {
+      await fetch(`/results/${result.id}`, { method: "DELETE" });
+    }
+
+    // Globales results Array aktualisieren
+    results = results.filter(r => !(r.klasse === cls && r.jahrgang === year && r.submittedAt.startsWith(date)));
+    renderResults();
+  } catch (err) {
+    console.error("Fehler beim Löschen:", err);
+    alert("Löschen fehlgeschlagen");
+  }
+});
+
+
+    dateGroup.appendChild(dateTitle);
+    dateGroup.appendChild(dateContent);
+
+    dateTitle.style.cursor = "pointer";
+    dateTitle.addEventListener("click", () => {
+      dateContent.style.display = dateContent.style.display === "none" ? "grid" : "none";
+    });
+
+    yearContent.appendChild(dateGroup);
+  });
+}
+ else {
           Object.keys(grouped[cls][year]).sort().forEach(studentName => {
             const studentGroupContainer = document.createElement("div");
             studentGroupContainer.className = "student-name-group";
@@ -358,62 +392,73 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Download Datumsebene: je 1 Schüler pro Seite
   function exportDatePDF(dateGroupData, cls, year, date) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'pt', 'a4');
-    const students = Object.keys(dateGroupData).sort();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'pt', 'a4');
 
-    let firstPage = true;
-    students.forEach(studentName => {
-      const studentResultsArr = dateGroupData[studentName];
-      studentResultsArr.forEach(studentResults => {
-        if (!firstPage) doc.addPage();
-        firstPage = false;
+  const students = Object.keys(dateGroupData).sort();
+  let firstPage = true;
 
-        const pageWidth = doc.internal.pageSize.width;
-        const pageHeight = doc.internal.pageSize.height;
-        const margin = 20;
-        const cols = 5;
-        const rowHeight = 28;
-        const fontSize = 7;
+  students.forEach(studentName => {
+    let studentResultsArr = dateGroupData[studentName];
 
-        let x = margin;
-        let y = 60;
+    // Immer in ein Array umwandeln
+    if (!Array.isArray(studentResultsArr)) {
+      studentResultsArr = Object.values(studentResultsArr).flat();
+    }
 
-        let totalPoints = 0;
-        const answers = [];
-        studentResults.forEach(r => Object.values(r.answers).forEach(a => answers.push(a)));
-        answers.forEach(a => { if(a.isCorrect) totalPoints++; });
+    // Falls studentResultsArr ein Array von Arrays ist, flach machen
+    studentResultsArr = studentResultsArr.flat();
 
-        doc.setFontSize(14);
-        doc.text(`${studentName}`, margin, 30);
-        doc.setFontSize(10);
-        doc.text(`Datum: ${date} | Gesamtpunkte: ${totalPoints}`, margin, 45);
-        doc.setFontSize(fontSize);
+    // Jetzt studentResultsArr garantiert ein Array von Result-Objekten
+    studentResultsArr.forEach(studentResults => {
+      const answers = Object.values(studentResults.answers);
 
-        answers.forEach((ansObj, i) => {
-          if (y + rowHeight > pageHeight - margin) {
-            doc.addPage();
-            y = margin + 30;
-            x = margin;
-          }
-          const colWidth = (pageWidth - margin*2 - (cols-1)*2) / cols;
-          doc.setFillColor(ansObj.isCorrect ? 230 : 255, ansObj.isCorrect ? 255 : 230, ansObj.isCorrect ? 230 : 230);
-          doc.rect(x, y, colWidth, rowHeight, 'F');
-          doc.setTextColor(0,0,0);
-          doc.text(ansObj.question, x+2, y+8, { maxWidth: colWidth-4 });
-          doc.text(`Antwort: ${ansObj.given || "-"}`, x+2, y+16, { maxWidth: colWidth-4 });
-          doc.text(`Richtig: ${ansObj.correct}`, x+2, y+24, { maxWidth: colWidth-4 });
-          x += colWidth + 2;
-          if ((i+1) % cols === 0) {
-            x = margin;
-            y += rowHeight + 3;
-          }
-        });
+      if (!firstPage) doc.addPage();
+      firstPage = false;
+
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      const margin = 20;
+      const cols = 5;
+      const rowHeight = 28;
+      const fontSize = 7;
+
+      let x = margin;
+      let y = 60;
+
+      let totalPoints = answers.filter(a => a.isCorrect).length;
+
+      doc.setFontSize(14);
+      doc.text(`${studentName}`, margin, 30);
+      doc.setFontSize(10);
+      doc.text(`Datum: ${date} | Gesamtpunkte: ${totalPoints}`, margin, 45);
+      doc.setFontSize(fontSize);
+
+      answers.forEach((ansObj, i) => {
+        if (y + rowHeight > pageHeight - margin) {
+          doc.addPage();
+          y = margin + 30;
+          x = margin;
+        }
+        const colWidth = (pageWidth - margin * 2 - (cols - 1) * 2) / cols;
+        doc.setFillColor(ansObj.isCorrect ? 230 : 255, ansObj.isCorrect ? 255 : 230, ansObj.isCorrect ? 230 : 230);
+        doc.rect(x, y, colWidth, rowHeight, 'F');
+        doc.setTextColor(0, 0, 0);
+        doc.text(ansObj.question, x + 2, y + 8, { maxWidth: colWidth - 4 });
+        doc.text(`Antwort: ${ansObj.given || "-"}`, x + 2, y + 16, { maxWidth: colWidth - 4 });
+        doc.text(`Richtig: ${ansObj.correct}`, x + 2, y + 24, { maxWidth: colWidth - 4 });
+        x += colWidth + 2;
+        if ((i + 1) % cols === 0) {
+          x = margin;
+          y += rowHeight + 3;
+        }
       });
     });
+  });
 
-    doc.save(`Klasse_${cls}_Jahrgang_${year}_${date}.pdf`);
-  }
+  doc.save(`Klasse_${cls}_Jahrgang_${year}_${date}.pdf`);
+}
+
 
   // Download Übersicht: eine Seite, nur Gesamtpunkte
   function exportDateSummaryPDF(dateGroupData, cls, year, date) {
