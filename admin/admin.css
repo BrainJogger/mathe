@@ -58,6 +58,7 @@ button {
   color: white;
   border: none;
   cursor: pointer;
+  margin-left: 5px;
 }
 
 .export-btn {
@@ -231,4 +232,62 @@ button {
 .student-card:hover,
 .answer-card:hover {
   transform:none;
+}
+
+.year-group {
+  margin-left: 15px;
+  margin-bottom: 20px;
+  padding: 10px;
+  border-left: 3px solid #4a90e2;
+}
+
+.year-group h3 {
+  margin-bottom: 10px;
+}
+
+.student-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  background: #f5f7fa;
+}
+
+.student-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.class-group {
+  margin-bottom: 20px;
+}
+
+.class-title {
+  background: #4a90e2;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 5px;
+}
+
+.class-content {
+  padding: 10px;
+}
+
+.year-title::after {
+  content: "▼";
+  float: right;
+  transition: transform 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.year-group.collapsed .year-title::after {
+  transform: rotate(-90deg);
+}
+
+.year-content {
+  margin-top: 10px;
 }

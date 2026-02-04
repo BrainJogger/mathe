@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let classes = [];
   let students = [];
   const openClasses = new Set();
+  const openYears = new Set();
+
 
   async function loadData() {
     try {
@@ -47,8 +49,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const title = document.createElement("h2");
       title.className = "class-title";
-      const arrow = openClasses.has(klasseName) ? "▼" : "▶";
-      title.innerHTML = `${arrow} Klasse ${klasseName}`;
+      //const arrow = openClasses.has(klasseName) ? "▼" : "▶";
+      title.innerHTML = `Klasse ${klasseName}`;
       classGroupDiv.appendChild(title);
 
       const content = document.createElement("div");
@@ -59,14 +61,24 @@ document.addEventListener("DOMContentLoaded", () => {
       const yearGroups = classesByName[klasseName].sort((a, b) => (a.jahrgang || "").localeCompare(b.jahrgang || ""));
 
       yearGroups.forEach(({ jahrgang, lehrer }) => {
+        const yearKey = `${klasseName}_${jahrgang}`;
+
         const yearDiv = document.createElement("div");
         yearDiv.className = "year-group";
 
+        if (!openYears.has(yearKey)) yearDiv.classList.add("collapsed");
+
         const yearTitle = document.createElement("h3");
+        yearTitle.className = "year-title";
         yearTitle.textContent = `Jahrgang: ${jahrgang || "-"} (${lehrer || "kein Lehrer"})`;
         yearDiv.appendChild(yearTitle);
 
+        const yearContent = document.createElement("div");
+        yearContent.className = "year-content";
+        yearContent.style.display = openYears.has(yearKey) ? "block" : "none";
+
         const ul = document.createElement("ul");
+
 
         // --- Schüler alphabetisch sortieren ---
         const studentsInYear = students
@@ -140,11 +152,24 @@ document.addEventListener("DOMContentLoaded", () => {
           await addStudent(name, klasseName, jahrgang);
           studentInput.value = "";
         };
-        yearDiv.appendChild(ul);
-        yearDiv.appendChild(studentInput);
-        yearDiv.appendChild(addBtn);
+        yearContent.appendChild(ul);
+        yearContent.appendChild(studentInput);
+        yearContent.appendChild(addBtn);
 
+        yearDiv.appendChild(yearContent);
         content.appendChild(yearDiv);
+
+        yearTitle.addEventListener("click", () => {
+          if (yearContent.style.display === "none") {
+            yearContent.style.display = "block";
+            yearDiv.classList.remove("collapsed");
+            openYears.add(yearKey);
+          } else {
+            yearContent.style.display = "none";
+            yearDiv.classList.add("collapsed");
+            openYears.delete(yearKey);
+          }
+        });
       });
 
       classGroupDiv.appendChild(content);
