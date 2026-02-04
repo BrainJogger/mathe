@@ -162,17 +162,22 @@ app.post("/api/students", (req, res) => {
 
 app.put("/api/students/:id", (req, res) => {
   const id = req.params.id;
-  const { name, lehrjahr } = req.body;
+  const { name, lehrjahr, klasse, jahrgang } = req.body;
+
   const students = readJSON(STUDENTS_FILE);
   const student = students.find(s => s.id === id);
 
   if (!student) return res.status(404).json({ error: "Schüler nicht gefunden" });
+
   if (name) student.name = name;
   if (lehrjahr !== undefined) student.lehrjahr = lehrjahr;
+  if (klasse !== undefined) student.klasse = klasse;
+  if (jahrgang !== undefined) student.jahrgang = String(jahrgang);
 
   writeJSON(STUDENTS_FILE, students);
   res.json({ message: "Schüler aktualisiert", student });
 });
+
 
 app.delete("/api/students/:id", (req, res) => {
   const id = req.params.id;

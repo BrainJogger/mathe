@@ -5,70 +5,35 @@
   <meta charset="UTF-8">
   <title>🏫 Klassen & Schüler verwalten</title>
   <link rel="stylesheet" href="admin.css">
-  <style>
-    /* Pfeil für einklappbare Karten */
-    .class-title::after {
-      content: "▼";
-      transition: transform 0.3s ease;
-      font-size: 0.9rem;
-    }
-
-    .class-group.expanded .class-title::after {
-      transform: rotate(-180deg);
-    }
-
-    .class-content {
-      display: none;
-      /* standardmäßig eingeklappt */
-      margin-top: 10px;
-    }
-
-    .class-group.expanded .class-content {
-      display: block;
-    }
-  </style>
 </head>
 
 <body>
   <header>
     <h1>🏫 Klassen & Schüler</h1>
     <nav>
-      <button class="btn btn-warning" onclick="history.back()">⬅ Zurück zur Admin-Seite</button>
+      <button class="btn btn-warning" onclick="history.back()">⬅ Zurück</button>
     </nav>
   </header>
 
   <main>
 
-    <!-- Neue Klasse -->
-    <div class="card">
-      <h2>➕ Neue Klasse anlegen</h2>
+    <section class="card">
+      <h2>Neue Klasse</h2>
 
-      <div style="display:flex; gap:10px; flex-wrap:wrap">
-        <input type="text" id="newClassName" placeholder="Klassenname">
-        <input type="text" id="newClassYear" placeholder="Jahrgang">
-        <input type="text" id="newClassTeacher" placeholder="Klassenlehrer">
-        <button class="btn btn-success" id="addClassBtn">➕ Klasse hinzufügen</button>
-      </div>
-    </div>
+      <input id="newClassName" placeholder="Klasse">
+      <input id="newClassYear" placeholder="Jahrgang">
+      <input id="newClassTeacher" placeholder="Lehrer">
 
-    <!-- Übersicht -->
-    <div class="card">
-      <h2>📋 Klassenübersicht</h2>
+      <button id="addClassBtn" class="btn btn-success">➕ Klasse</button>
+    </section>
+
+    <section class="card">
+      <h2>Übersicht</h2>
       <div id="classList"></div>
-    </div>
+    </section>
 
   </main>
 
-
-  <script>
-    // Karten auf-/zuklappen beim Klick
-    document.addEventListener('click', function (e) {
-      if (e.target.classList.contains('class-title')) {
-        const group = e.target.parentElement;
-        group.classList.toggle('expanded');
-      }
-    });
-  </script>
   <script src="students.js"></script>
 </body>
 

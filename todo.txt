@@ -7,4 +7,4 @@
 - Kinder sehen, auf welcher Seite sie sind X
 - ⁠“bist Du wirklich …“ vor „Test starten“ X
 - Alle Schüler eines Jahrgangs löschen
-- ⁠Schüler eines Jahrgangs verschieben (alle markieren und einzeln markieren) in einen anderen Jahrgang und in andere Klasse
+- ⁠Schüler eines Jahrgangs verschieben (alle markieren und einzeln markieren) in einen anderen Jahrgang und in andere Klasse X

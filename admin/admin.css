@@ -51,14 +51,61 @@ button {
   cursor: pointer;
 }
 
+/* Allgemeine Button-Effekte */
 .btn {
-  padding: 6px 12px;
-  border-radius: 5px;
-  font-weight: bold;
-  color: white;
-  border: none;
   cursor: pointer;
-  margin-left: 5px;
+  transition: all 0.2s ease;
+  padding: 5px 10px;
+  margin: 2px;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.9rem;
+}
+
+/* Hover: leichte Vergrößerung + Schatten */
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Active: gedrückt-Effekt */
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Verschiedene Button-Farben (wie vorher) */
+.btn-success {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #45a049;
+}
+
+.btn-danger {
+  background-color: #f44336;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #e53935;
+}
+
+.btn-warning {
+  background-color: #ff9800;
+  color: white;
+}
+
+.btn-warning:hover {
+  background-color: #fb8c00;
+}
+
+/* Optional: Checkbox-Buttons kurz hervorheben, wenn selektiert */
+input[type=checkbox]:checked+span {
+  font-weight: bold;
+  color: #1976d2;
 }
 
 .export-btn {
@@ -290,4 +337,76 @@ button {
 
 .year-content {
   margin-top: 10px;
+}
+
+body {
+  font-family: system-ui;
+  background: #f3f6fb;
+  margin: 0;
+}
+
+header {
+  background: #1e3a8a;
+  color: white;
+  padding: 15px;
+}
+
+main {
+  padding: 20px
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+  margin-bottom: 20px;
+}
+
+.btn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  margin: 4px;
+}
+
+.btn-success {
+  background: #16a34a;
+  color: white
+}
+
+.btn-warning {
+  background: #f59e0b;
+  color: white
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: white
+}
+
+.student-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  margin: 4px 0;
+  background: #eef2ff;
+  border-radius: 8px;
+}
+
+.class-group h2,
+.year-group h3 {
+  cursor: pointer
+}
+
+input {
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc
+}
+
+.btn-all {
+  background-color: rgb(225, 225, 21);
 }

@@ -1,251 +1,332 @@
 document.addEventListener("DOMContentLoaded", () => {
+
   const classList = document.getElementById("classList");
   const addClassBtn = document.getElementById("addClassBtn");
-  const newClassNameInput = document.getElementById("newClassName");
-  const newClassTeacherInput = document.getElementById("newClassTeacher");
-  const newClassYearInput = document.getElementById("newClassYear");
+  const newClassName = document.getElementById("newClassName");
+  const newClassYear = document.getElementById("newClassYear");
+  const newClassTeacher = document.getElementById("newClassTeacher");
 
   let classes = [];
   let students = [];
+
   const openClasses = new Set();
   const openYears = new Set();
 
-
   async function loadData() {
-    try {
-      const [classRes, studentRes] = await Promise.all([
-        fetch("/api/classes"),
-        fetch("/api/students")
-      ]);
-      classes = classRes.ok ? await classRes.json() : [];
-      students = studentRes.ok ? await studentRes.json() : [];
-      renderClasses();
-    } catch (err) {
-      console.error(err);
-      classList.innerHTML = "<p>❌ Fehler beim Laden der Daten</p>";
-    }
+    const [c, s] = await Promise.all([
+      fetch("/api/classes"),
+      fetch("/api/students")
+    ]);
+    classes = await c.json();
+    students = await s.json();
+    render();
   }
 
-  function renderClasses() {
+  function render() {
     classList.innerHTML = "";
-    if (!classes.length) {
-      classList.innerHTML = "<p>Keine Klassen vorhanden.</p>";
-      return;
-    }
 
-    // --- Klassen alphabetisch sortieren ---
-    const sortedClasses = [...classes].sort((a, b) => a.name.localeCompare(b.name));
-
-    // Gruppiere Klassen nach Name
-    const classesByName = {};
-    sortedClasses.forEach(c => {
-      if (!classesByName[c.name]) classesByName[c.name] = [];
-      classesByName[c.name].push(c);
+    const grouped = {};
+    classes.forEach(c => {
+      if (!grouped[c.name]) grouped[c.name] = [];
+      grouped[c.name].push(c);
     });
 
-    Object.keys(classesByName).forEach(klasseName => {
-      const classGroupDiv = document.createElement("div");
-      classGroupDiv.className = "class-group";
+    Object.keys(grouped).sort().forEach(klasse => {
+      const wrap = document.createElement("div");
+      wrap.className = "class-group";
 
       const title = document.createElement("h2");
-      title.className = "class-title";
-      //const arrow = openClasses.has(klasseName) ? "▼" : "▶";
-      title.innerHTML = `Klasse ${klasseName}`;
-      classGroupDiv.appendChild(title);
+      title.textContent = "▶ Klasse " + klasse;
+      wrap.appendChild(title);
 
       const content = document.createElement("div");
-      content.className = "class-content";
-      content.style.display = openClasses.has(klasseName) ? "block" : "none";
+      content.style.display = openClasses.has(klasse) ? "block" : "none";
 
-      // --- Jahrgänge alphabetisch sortieren ---
-      const yearGroups = classesByName[klasseName].sort((a, b) => (a.jahrgang || "").localeCompare(b.jahrgang || ""));
+      title.onclick = () => {
+        if (content.style.display === "none") {
+          content.style.display = "block";
+          openClasses.add(klasse);
+        } else {
+          content.style.display = "none";
+          openClasses.delete(klasse);
+        }
+      };
 
-      yearGroups.forEach(({ jahrgang, lehrer }) => {
-        const yearKey = `${klasseName}_${jahrgang}`;
+      grouped[klasse].forEach(c => {
+        const yearKey = klasse + "-" + c.jahrgang;
 
-        const yearDiv = document.createElement("div");
-        yearDiv.className = "year-group";
-
-        if (!openYears.has(yearKey)) yearDiv.classList.add("collapsed");
+        const yearBox = document.createElement("div");
+        yearBox.className = "year-group";
 
         const yearTitle = document.createElement("h3");
-        yearTitle.className = "year-title";
-        yearTitle.textContent = `Jahrgang: ${jahrgang || "-"} (${lehrer || "kein Lehrer"})`;
-        yearDiv.appendChild(yearTitle);
+        yearTitle.textContent = "▶ Jahrgang " + c.jahrgang + " (" + (c.lehrer || "-") + ")";
+        yearBox.appendChild(yearTitle);
 
         const yearContent = document.createElement("div");
-        yearContent.className = "year-content";
         yearContent.style.display = openYears.has(yearKey) ? "block" : "none";
 
-        const ul = document.createElement("ul");
-
-
-        // --- Schüler alphabetisch sortieren ---
-        const studentsInYear = students
-          .filter(s => s.klasse === klasseName && s.jahrgang === jahrgang)
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        studentsInYear.forEach(st => {
-          const li = document.createElement("li");
-          li.className = "student-card";
-
-          const nameSpan = document.createElement("span");
-          nameSpan.textContent = st.name;
-          nameSpan.className = "student-name";
-          li.appendChild(nameSpan);
-
-          const btnGroup = document.createElement("div");
-          btnGroup.className = "student-buttons";
-
-          // Bearbeiten
-          const editBtn = document.createElement("button");
-          editBtn.textContent = "✏️";
-          editBtn.title = "Namen bearbeiten";
-          editBtn.className = "btn btn-warning";
-          editBtn.addEventListener("click", () => {
-            const input = document.createElement("input");
-            input.value = st.name;
-            input.style.flex = "1";
-            li.replaceChild(input, nameSpan);
-            input.focus();
-
-            input.addEventListener("keydown", async (e) => {
-              if (e.key === "Enter") {
-                const newName = input.value.trim();
-                if (!newName) return;
-                await updateStudentName(st.id, newName);
-              }
-              if (e.key === "Escape") {
-                li.replaceChild(nameSpan, input);
-              }
-            });
-
-            input.addEventListener("blur", () => {
-              li.replaceChild(nameSpan, input);
-            });
-          });
-          btnGroup.appendChild(editBtn);
-
-          // Löschen
-          const delBtn = document.createElement("button");
-          delBtn.textContent = "🗑";
-          delBtn.className = "btn btn-danger";
-          delBtn.onclick = async () => {
-            if (!confirm(`Schüler ${st.name} löschen?`)) return;
-            await deleteStudent(st.id);
-          };
-          btnGroup.appendChild(delBtn);
-
-          li.appendChild(btnGroup);
-          ul.appendChild(li);
-        });
-
-        // Neuer Schüler Input
-        const studentInput = document.createElement("input");
-        studentInput.placeholder = "Neuer Schülername";
-        const addBtn = document.createElement("button");
-        addBtn.textContent = "➕ Schüler hinzufügen";
-        addBtn.className = "btn btn-success";
-        addBtn.onclick = async () => {
-          const name = studentInput.value.trim();
-          if (!name) return;
-          await addStudent(name, klasseName, jahrgang);
-          studentInput.value = "";
-        };
-        yearContent.appendChild(ul);
-        yearContent.appendChild(studentInput);
-        yearContent.appendChild(addBtn);
-
-        yearDiv.appendChild(yearContent);
-        content.appendChild(yearDiv);
-
-        yearTitle.addEventListener("click", () => {
+        yearTitle.onclick = () => {
           if (yearContent.style.display === "none") {
             yearContent.style.display = "block";
-            yearDiv.classList.remove("collapsed");
             openYears.add(yearKey);
           } else {
             yearContent.style.display = "none";
-            yearDiv.classList.add("collapsed");
             openYears.delete(yearKey);
           }
+        };
+
+        // Hinweis für Bulk-Buttons
+        const hint = document.createElement("div");
+        hint.textContent = "Aktionen beziehen sich auf die markierten Schüler:";
+        hint.style.fontStyle = "italic";
+        hint.style.marginBottom = "5px";
+        yearContent.appendChild(hint);
+
+        const ul = document.createElement("ul");
+
+        const list = students
+          .filter(s => s.klasse === klasse && s.jahrgang === c.jahrgang)
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        list.forEach(st => {
+          const li = document.createElement("li");
+          li.className = "student-card";
+
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.dataset.id = st.id;
+          li.appendChild(cb);
+
+          const span = document.createElement("span");
+          span.textContent = st.name;
+          span.style.flex = "1";
+          li.appendChild(span);
+
+          const btns = document.createElement("div");
+
+          // ✏️ Bearbeiten
+          const edit = document.createElement("button");
+          edit.textContent = "✏️";
+          edit.className = "btn btn-warning";
+          edit.onclick = () => {
+            const input = document.createElement("input");
+            input.value = st.name;
+            li.replaceChild(input, span);
+            input.focus();
+
+            input.onkeydown = async e => {
+              if (e.key === "Enter") {
+                await fetch("/api/students/" + st.id, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ name: input.value })
+                });
+                loadData();
+              }
+              if (e.key === "Escape") li.replaceChild(span, input);
+            };
+
+            input.onblur = () => li.replaceChild(span, input);
+          };
+
+          // 🗑 Löschen einzelner Schüler
+          const del = document.createElement("button");
+          del.textContent = "🗑";
+          del.className = "btn btn-danger";
+          del.onclick = async () => {
+            if (!confirm(st.name + " löschen?")) return;
+            await fetch("/api/students/" + st.id, { method: "DELETE" });
+            loadData();
+          };
+
+          btns.appendChild(edit);
+          btns.appendChild(del);
+          li.appendChild(btns);
+          ul.appendChild(li);
         });
+
+        // Bulk-Buttons
+        const selectAll = document.createElement("button");
+        selectAll.textContent = "☑ Alle";
+        selectAll.className = "btn btn-all";
+
+        let allSelected = false;
+        selectAll.onclick = () => {
+          const checkboxes = yearContent.querySelectorAll("input[type=checkbox]");
+          allSelected = !allSelected;
+          checkboxes.forEach(c => c.checked = allSelected);
+        };
+
+        const bulkMoveBtn = document.createElement("button");
+        bulkMoveBtn.textContent = "📦 Verschieben";
+        bulkMoveBtn.className = "btn btn-success";
+        bulkMoveBtn.onclick = () => bulkMove(yearContent);
+
+        const bulkDelBtn = document.createElement("button");
+        bulkDelBtn.textContent = "🗑 Löschen";
+        bulkDelBtn.className = "btn btn-danger";
+        bulkDelBtn.onclick = async () => {
+          const checked = [...yearContent.querySelectorAll("input[type=checkbox]:checked")];
+          if (!checked.length) return alert("Keine Schüler ausgewählt");
+          if (!confirm("Ausgewählte Schüler wirklich löschen?")) return;
+
+          for (const cb of checked) {
+            const id = cb.dataset.id;
+            await fetch("/api/students/" + id, { method: "DELETE" });
+          }
+
+          loadData();
+        };
+
+        yearContent.appendChild(selectAll);
+        yearContent.appendChild(bulkMoveBtn);
+        yearContent.appendChild(bulkDelBtn);
+        yearContent.appendChild(ul);
+
+        // Neuer Schüler
+        const inp = document.createElement("input");
+        inp.placeholder = "Neuer Schüler";
+
+        const add = document.createElement("button");
+        add.textContent = "➕";
+        add.className = "btn";
+        add.onclick = async () => {
+          if (!inp.value.trim()) return;
+          await fetch("/api/students", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: inp.value, klasse, jahrgang: c.jahrgang })
+          });
+          inp.value = "";
+          loadData();
+        };
+
+        yearContent.appendChild(inp);
+        yearContent.appendChild(add);
+
+        yearBox.appendChild(yearContent);
+        content.appendChild(yearBox);
       });
 
-      classGroupDiv.appendChild(content);
-      classList.appendChild(classGroupDiv);
-
-      // Auf-/Zuklappen der Klasse
-      title.addEventListener("click", () => {
-        if (content.style.display === "none") {
-          content.style.display = "block";
-          openClasses.add(klasseName);
-        } else {
-          content.style.display = "none";
-          openClasses.delete(klasseName);
-        }
-      });
+      wrap.appendChild(content);
+      classList.appendChild(wrap);
     });
   }
 
-  async function addClass(name) {
-    const teacher = newClassTeacherInput.value.trim();
-    const year = newClassYearInput.value.trim();
-    try {
-      await fetch("/api/classes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, lehrer: teacher, jahrgang: year })
-      });
-      await loadData();
-    } catch (err) {
-      console.error("Fehler beim Anlegen der Klasse", err);
-    }
+  // -----------------------
+  // Bulk Move mit Dropdown Pop-Up
+  // -----------------------
+  async function bulkMove(yearContent) {
+    const checked = [...yearContent.querySelectorAll("input[type=checkbox]:checked")];
+    if (!checked.length) return alert("Keine Schüler ausgewählt");
+
+    const ids = checked.map(c => c.dataset.id);
+
+    // Popup erzeugen
+    const modal = document.createElement("div");
+    modal.style.position = "fixed";
+    modal.style.top = 0;
+    modal.style.left = 0;
+    modal.style.width = "100%";
+    modal.style.height = "100%";
+    modal.style.background = "rgba(0,0,0,0.5)";
+    modal.style.display = "flex";
+    modal.style.justifyContent = "center";
+    modal.style.alignItems = "center";
+    modal.style.zIndex = 9999;
+
+    const box = document.createElement("div");
+    box.style.background = "#fff";
+    box.style.padding = "20px";
+    box.style.borderRadius = "10px";
+    box.style.minWidth = "250px";
+
+    const labelClass = document.createElement("label");
+    labelClass.textContent = "Neue Klasse:";
+    const selectClass = document.createElement("select");
+    selectClass.style.width = "100%";
+    selectClass.style.marginBottom = "10px";
+
+    const uniqueClasses = [...new Set(classes.map(c => c.name))].sort();
+    uniqueClasses.forEach(k => {
+      const opt = document.createElement("option");
+      opt.value = k;
+      opt.textContent = k;
+      selectClass.appendChild(opt);
+    });
+
+    const labelYear = document.createElement("label");
+    labelYear.textContent = "Neuer Jahrgang:";
+    const selectYear = document.createElement("select");
+    selectYear.style.width = "100%";
+    selectYear.style.marginBottom = "10px";
+
+    const uniqueYears = [...new Set(classes.map(c => c.jahrgang))].sort();
+    uniqueYears.forEach(y => {
+      const opt = document.createElement("option");
+      opt.value = y;
+      opt.textContent = y;
+      selectYear.appendChild(opt);
+    });
+
+    const okBtn = document.createElement("button");
+    okBtn.textContent = "✔ Verschieben";
+    okBtn.className = "btn btn-success";
+    okBtn.style.marginRight = "10px";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "❌ Abbrechen";
+    cancelBtn.className = "btn btn-danger";
+
+    box.appendChild(labelClass);
+    box.appendChild(selectClass);
+    box.appendChild(labelYear);
+    box.appendChild(selectYear);
+    box.appendChild(okBtn);
+    box.appendChild(cancelBtn);
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+
+    cancelBtn.onclick = () => document.body.removeChild(modal);
+
+    okBtn.onclick = async () => {
+      const targetClass = selectClass.value;
+      const targetYear = selectYear.value;
+      if (!targetClass || !targetYear) return alert("Klasse und Jahrgang erforderlich");
+
+      if (!confirm(ids.length + " Schüler verschieben?")) return;
+
+      for (const id of ids) {
+        await fetch("/api/students/" + id, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ klasse: targetClass, jahrgang: targetYear })
+        });
+      }
+
+      document.body.removeChild(modal);
+      loadData();
+    };
   }
 
-  async function addStudent(name, klasse, jahrgang) {
-    try {
-      await fetch("/api/students", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, klasse, jahrgang })
-      });
-      await loadData();
-    } catch (err) {
-      console.error("Fehler beim Anlegen des Schülers", err);
-    }
-  }
+  addClassBtn.onclick = async () => {
+    if (!newClassName.value || !newClassYear.value) return;
 
-  async function updateStudentName(id, newName) {
-    try {
-      await fetch(`/api/students/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName })
-      });
-      await loadData();
-    } catch (err) {
-      console.error("Fehler beim Aktualisieren des Namens", err);
-    }
-  }
+    await fetch("/api/classes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: newClassName.value,
+        jahrgang: newClassYear.value,
+        lehrer: newClassTeacher.value
+      })
+    });
 
-  async function deleteStudent(id) {
-    try {
-      await fetch(`/api/students/${id}`, { method: "DELETE" });
-      await loadData();
-    } catch (err) {
-      console.error("Fehler beim Löschen des Schülers", err);
-    }
-  }
-
-  addClassBtn.addEventListener("click", () => {
-    const name = newClassNameInput.value.trim();
-    if (!name) return;
-    addClass(name);
-    newClassNameInput.value = "";
-    newClassTeacherInput.value = "";
-    newClassYearInput.value = "";
-  });
+    newClassName.value = "";
+    newClassYear.value = "";
+    newClassTeacher.value = "";
+    loadData();
+  };
 
   loadData();
 });
