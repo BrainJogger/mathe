@@ -8,8 +8,8 @@
 - ⁠“bist Du wirklich …“ vor „Test starten“ X
 - Alle Schüler eines Jahrgangs löschen
 - ⁠Schüler eines Jahrgangs verschieben (alle markieren und einzeln markieren) in einen anderen Jahrgang und in andere Klasse X
-- Kannst du als Malzeichen ein Punkt und nicht das x nehmen? Das kennen die nicht
-- Und kann die Nummerierung nicht fett sein?
+- Kannst du als Malzeichen ein Punkt und nicht das x nehmen? Das kennen die nicht X
+- Nummerierung entfernen X
 - Kann man unten vielleicht auch farblich markieren, wenn auf eine Seite schon alle Aufgaben bearbeitet wurden bzw noch welche unbearbeitet sind?
 - Und die Aufgabe 10x10 ist z.B. über zwei Zeilen. Das ist auch doof. Die Aufgabe sollte komplett nebeneinander stehen
 - Und die Namen der Lehrer brauchen wir nicht
