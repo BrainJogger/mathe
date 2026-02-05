@@ -255,7 +255,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (a.isCorrect) {
           wrapper.innerHTML = `<strong>${idx + 1}) ${a.question}</strong><br><span class="correct">✅ ${a.given}</span>`;
         } else {
-          wrapper.innerHTML = `<strong>${idx + 1}) ${a.question}</strong><br><span class="incorrect">❌ Deine Antwort: ${a.given}<br>✔ Richtig: ${a.correct}</span>`;
+          wrapper.innerHTML = `<strong>${idx + 1}) ${a.question}</strong><br><span class="incorrect">❌ Deine Antwort: ${a.given}<br><br>Richtig: ${a.correct}</span>`;
         }
         correctionsContainer.appendChild(wrapper);
       });
