@@ -367,6 +367,13 @@ document.addEventListener("DOMContentLoaded", () => {
     container.appendChild(studentGroup);
   }
 
+  function sanitizeText(text) {
+    if (!text) return text;
+    return text
+      .replace(/⋅/g, "·")   // mathematischer Punkt
+      .replace(/×/g, "x");   // optional falls du auch × nutzt
+  }
+
   // Einzel-Download (wie bisher)
   function exportStudentPDF(studentResults, studentName, date) {
     const { jsPDF } = window.jspdf;
@@ -405,7 +412,7 @@ document.addEventListener("DOMContentLoaded", () => {
         doc.setFillColor(ansObj.isCorrect ? 230 : 255, ansObj.isCorrect ? 255 : 230, ansObj.isCorrect ? 230 : 230);
         doc.rect(x, y, colWidth, rowHeight, 'F');
         doc.setTextColor(0, 0, 0);
-        doc.text(ansObj.question, x + 2, y + 8, { maxWidth: colWidth - 4 });
+        doc.text(sanitizeText(ansObj.question), x + 2, y + 8, { maxWidth: colWidth - 4 });
         doc.text(`Antwort: ${ansObj.given || "-"}`, x + 2, y + 16, { maxWidth: colWidth - 4 });
         doc.text(`Richtig: ${ansObj.correct}`, x + 2, y + 24, { maxWidth: colWidth - 4 });
         x += colWidth + 2;
@@ -473,7 +480,7 @@ document.addEventListener("DOMContentLoaded", () => {
           doc.setFillColor(ansObj.isCorrect ? 230 : 255, ansObj.isCorrect ? 255 : 230, ansObj.isCorrect ? 230 : 230);
           doc.rect(x, y, colWidth, rowHeight, 'F');
           doc.setTextColor(0, 0, 0);
-          doc.text(ansObj.question, x + 2, y + 8, { maxWidth: colWidth - 4 });
+          doc.text(sanitizeText(ansObj.question), x + 2, y + 8, { maxWidth: colWidth - 4 });
           doc.text(`Antwort: ${ansObj.given || "-"}`, x + 2, y + 16, { maxWidth: colWidth - 4 });
           doc.text(`Richtig: ${ansObj.correct}`, x + 2, y + 24, { maxWidth: colWidth - 4 });
           x += colWidth + 2;
