@@ -47,7 +47,7 @@ function generateTasks() {
   const allTasks = [];
   for (let i = 1; i <= 10; i++) {
     for (let j = 1; j <= 10; j++) {
-      allTasks.push({ question: `${i} × ${j}`, solution: i * j });
+      allTasks.push({ question: `${i} ⋅ ${j}`, solution: i * j });
     }
   }
   allTasks.sort(() => 0.5 - Math.random());
