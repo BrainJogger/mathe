@@ -162,6 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       input.addEventListener("input", (e) => {
         answersCache[key] = e.target.value;
+        renderPagination(Object.keys(tasks).length); // Status neu berechnen
       });
 
       wrapper.appendChild(label);
@@ -176,30 +177,41 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderPagination(total) {
     paginationDiv.innerHTML = "";
     const totalPages = Math.ceil(total / pageSize);
+    const keys = Object.keys(tasks);
 
-    // Seitenanzeige
     pageIndicator.textContent = `Seite ${currentPage + 1} von ${totalPages}`;
 
     for (let i = 0; i < totalPages; i++) {
       const btn = document.createElement("button");
       btn.textContent = (i + 1).toString();
 
-      // Aktuelle Seite hervorheben
+      const start = i * pageSize;
+      const end = Math.min(start + pageSize, keys.length);
+
+      let allAnswered = true;
+
+      for (let j = start; j < end; j++) {
+        const key = keys[j];
+        const value = answersCache[key];
+        if (!value || value === "") {
+          allAnswered = false;
+          break;
+        }
+      }
+
+      // Farbstatus setzen
       if (i === currentPage) {
-        btn.style.backgroundColor = "#4a90e2"; // Blau
-        btn.style.color = "#fff";
-        btn.style.fontWeight = "bold";
+        btn.classList.add("page-active");
+      } else if (allAnswered) {
+        btn.classList.add("page-complete");
       } else {
-        btn.style.backgroundColor = ""; // Standard
-        btn.style.color = "";
-        btn.style.fontWeight = "normal";
+        btn.classList.add("page-incomplete");
       }
 
       btn.addEventListener("click", () => renderPage(i));
       paginationDiv.appendChild(btn);
     }
   }
-
 
   // --- Antworten absenden ---
   async function submitAnswers() {

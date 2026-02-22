@@ -135,3 +135,53 @@ button:hover {
   margin-left: 15px;
   font-weight: normal;
 }
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.pagination button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+
+  display: flex;
+  /* wichtig */
+  align-items: center;
+  /* vertikal zentriert */
+  justify-content: center;
+  /* horizontal zentriert */
+
+  padding: 0;
+  /* verhindert Verschiebung */
+  line-height: 1;
+  /* wichtig für exakte Mitte */
+
+  transition: all 0.2s ease;
+}
+
+/* Aktive Seite (Blau hat höchste Priorität) */
+.page-active {
+  background-color: #4a90e2 !important;
+  color: white !important;
+  transform: scale(1.15);
+}
+
+/* Seite vollständig beantwortet */
+.page-complete {
+  background-color: #4caf50;
+  color: white;
+}
+
+/* Seite unvollständig */
+.page-incomplete {
+  background-color: #f44336;
+  color: white;
+}

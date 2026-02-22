@@ -10,7 +10,7 @@
 - ⁠Schüler eines Jahrgangs verschieben (alle markieren und einzeln markieren) in einen anderen Jahrgang und in andere Klasse X
 - Kannst du als Malzeichen ein Punkt und nicht das x nehmen? Das kennen die nicht X
 - Nummerierung entfernen X
-- Kann man unten vielleicht auch farblich markieren, wenn auf eine Seite schon alle Aufgaben bearbeitet wurden bzw noch welche unbearbeitet sind?
+- Kann man unten vielleicht auch farblich markieren, wenn auf eine Seite schon alle Aufgaben bearbeitet wurden bzw noch welche unbearbeitet sind? X
 - Und die Aufgabe 10x10 ist z.B. über zwei Zeilen. Das ist auch doof. Die Aufgabe sollte komplett nebeneinander stehen
 - Und die Namen der Lehrer brauchen wir nicht
 - "Abschicken" Button weiter nach unten X
