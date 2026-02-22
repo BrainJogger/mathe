@@ -6,7 +6,7 @@
 - ⁠Einmaleins-Meisterprüfung - Lehrkräfte statt „Admin Dashboard“ X
 - Kinder sehen, auf welcher Seite sie sind X
 - ⁠“bist Du wirklich …“ vor „Test starten“ X
-- Alle Schüler eines Jahrgangs löschen
+- Alle Schüler eines Jahrgangs löschen X
 - ⁠Schüler eines Jahrgangs verschieben (alle markieren und einzeln markieren) in einen anderen Jahrgang und in andere Klasse X
 - Kannst du als Malzeichen ein Punkt und nicht das x nehmen? Das kennen die nicht X
 - Nummerierung entfernen X
