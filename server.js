@@ -288,4 +288,21 @@ app.get("/admin", (req, res) => {
   res.sendFile(path.join(__dirname, "admin", "admin.html"));
 });
 
+// --- Prüfen, ob Schüler heute schon getestet wurde ---
+app.get("/api/check-attempt/:studentId", (req, res) => {
+  const { studentId } = req.params;
+  if (!studentId) return res.status(400).json({ error: "studentId erforderlich" });
+
+  const results = readJSON(RESULTS_FILE);
+  const today = new Date().toISOString().split("T")[0]; // nur Datum, ohne Uhrzeit
+
+  const alreadyDone = results.some(r =>
+    r.studentId === studentId &&
+    r.submittedAt &&
+    r.submittedAt.startsWith(today)
+  );
+
+  res.json({ alreadyDone });
+});
+
 app.listen(PORT, () => console.log(`Server läuft auf http://localhost:${PORT}`));

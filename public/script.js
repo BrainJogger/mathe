@@ -374,6 +374,21 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // 🔒 Prüfen, ob heute schon geschrieben
+    try {
+      const checkRes = await fetch(`/api/check-attempt/${selectedStudent.id}`);
+      const checkData = await checkRes.json();
+
+      if (checkData.alreadyDone) {
+        alert("Du hast heute bereits eine Prüfung abgelegt.");
+        return; // Test wird nicht gestartet
+      }
+    } catch (err) {
+      console.error("Fehler bei Prüfungsprüfung", err);
+      alert("Prüfung konnte nicht geprüft werden.");
+      return;
+    }
+
     // --- NEUE ABFRAGE ---
     const isCorrect = confirm(`Bist du sicher, dass du ${selectedStudent.name} bist?`);
     if (!isCorrect) return;

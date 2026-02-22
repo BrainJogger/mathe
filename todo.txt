@@ -15,4 +15,4 @@
 - Und die Namen der Lehrer brauchen wir nicht
 - "Abschicken" Button weiter nach unten X
 - Benötigte Zeit anzeigen X
-- Prüfen, ob der Schüler schon eine Aufgabe an dem Tag erledigt hat
+- Prüfen, ob der Schüler schon eine Aufgabe an dem Tag erledigt hat X
