@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
         yearBox.className = "year-group";
 
         const yearTitle = document.createElement("h3");
-        yearTitle.textContent = "▶ Jahrgang " + c.jahrgang + " (" + (c.lehrer || "-") + ")";
+        yearTitle.textContent = "▶ Jahrgang " + c.jahrgang;
         yearBox.appendChild(yearTitle);
 
         const yearContent = document.createElement("div");

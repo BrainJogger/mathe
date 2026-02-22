@@ -1,0 +1,99 @@
+# Task-Template
+# Format:
+# - [ ] T000 | Prio:mittel | Titel
+#   Akzeptanz:
+#   - Kriterium 1
+#   - Kriterium 2
+#   Notizen:
+#   - Optional
+
+- [x] T001 | Prio:mittel | "Alles löschen" entfernen (auch nach Datum)
+  Akzeptanz:
+  - Funktion "alles löschen" ist entfernt
+  - Datum-bezogenes Löschen bleibt korrekt steuerbar
+
+- [x] T002 | Prio:mittel | Download nach Datum für alle Schüler
+  Akzeptanz:
+  - Export/Download kann nach Datum gefiltert werden
+  - Alle Schülerdaten des Datums werden berücksichtigt
+
+- [x] T003 | Prio:mittel | Löschen nach Datum
+  Akzeptanz:
+  - Ergebnisse können gezielt nach Datum gelöscht werden
+  - Rückmeldung bei erfolgreicher Löschung ist vorhanden
+
+- [x] T004 | Prio:mittel | Löschen nach Jahrgang
+  Akzeptanz:
+  - Ergebnisse/Einträge können nach Jahrgang gelöscht werden
+  - Keine Auswirkungen auf andere Jahrgänge
+
+- [x] T005 | Prio:mittel | PDF mit Punkte-Klassenübersicht pro Datum
+  Akzeptanz:
+  - PDF-Export enthält Punkteübersicht je Klasse
+  - Filterung nach Datum funktioniert
+
+- [x] T006 | Prio:mittel | "Einmaleins-Meisterprüfung" und "Lehrkräfte" statt "Admin Dashboard"
+  Akzeptanz:
+  - Titel/Benennung im Admin-Bereich angepasst
+  - Begriffe sind konsistent in der UI
+
+- [x] T007 | Prio:mittel | Kinder sehen, auf welcher Seite sie sind
+  Akzeptanz:
+  - Aktuelle Seite/Abschnitt ist sichtbar
+  - Anzeige aktualisiert sich beim Wechsel
+
+- [x] T008 | Prio:mittel | Bestätigungsfrage vor "Test starten" ("bist Du wirklich …")
+  Akzeptanz:
+  - Vor Start erscheint eine Bestätigung
+  - Start erfolgt erst nach Zustimmung
+
+- [x] T009 | Prio:mittel | Alle Schüler eines Jahrgangs löschen
+  Akzeptanz:
+  - Sammellöschung pro Jahrgang ist möglich
+  - Betroffene Schüler werden korrekt entfernt
+
+- [x] T010 | Prio:mittel | Schüler eines Jahrgangs verschieben (alle/einzeln) in anderen Jahrgang und Klasse
+  Akzeptanz:
+  - Mehrfachauswahl und Einzelauswahl funktionieren
+  - Ziel-Jahrgang und Ziel-Klasse sind wählbar
+  - Änderungen werden korrekt gespeichert
+
+- [x] T011 | Prio:mittel | Malzeichen als Punkt statt "x"
+  Akzeptanz:
+  - Aufgaben zeigen das Punkt-Zeichen als Multiplikationssymbol
+  - Darstellung ist überall einheitlich
+
+- [x] T012 | Prio:mittel | Nummerierung entfernen
+  Akzeptanz:
+  - Aufgaben/Elemente werden ohne Nummerierung angezeigt
+  - Layout bleibt korrekt
+
+- [x] T013 | Prio:mittel | Unten farblich markieren: Seite vollständig bearbeitet / offen
+  Akzeptanz:
+  - Seitenstatus wird farblich unterschieden
+  - Status wechselt korrekt bei Bearbeitung
+
+- [ ] T014 | Prio:mittel | Aufgabe "10x10" steht über zwei Zeilen, soll in einer Zeile stehen
+  Akzeptanz:
+  - Multiplikationsaufgabe bleibt in einer Zeile
+  - Kein Zeilenumbruch innerhalb der Aufgabe
+
+- [x] T015 | Prio:mittel | Namen der Lehrer nicht anzeigen
+  Akzeptanz:
+  - Lehrernamen sind in der Schüleransicht ausgeblendet
+  - Keine unbeabsichtigten Informationsverluste in Admin-Ansichten
+
+- [x] T016 | Prio:mittel | "Abschicken"-Button weiter nach unten
+  Akzeptanz:
+  - Button-Position ist nach unten verschoben
+  - Auf Mobil und Desktop gut erreichbar
+
+- [x] T017 | Prio:mittel | Benötigte Zeit anzeigen
+  Akzeptanz:
+  - Benötigte Zeit wird nach Abschluss angezeigt
+  - Zeitwert ist plausibel und korrekt formatiert
+
+- [x] T018 | Prio:mittel | Prüfen, ob Schüler am Tag schon eine Aufgabe erledigt hat
+  Akzeptanz:
+  - Mehrfachversuche am selben Tag werden erkannt
+  - UI/Backend reagiert entsprechend auf bereits erledigt
