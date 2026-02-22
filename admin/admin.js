@@ -278,12 +278,30 @@ document.addEventListener("DOMContentLoaded", () => {
     headerDiv.style.alignItems = "center";
 
     let earned = 0, total = 0;
-    studentResults.forEach(r => Object.values(r.answers).forEach(a => { total++; if (a.isCorrect) earned++; }));
+    let totalTimeUsed = 0;
+    const maxTime = 600; // ⬅ falls eure Prüfungszeit 10 Minuten beträgt
+
+    studentResults.forEach(r => {
+      Object.values(r.answers).forEach(a => {
+        total++;
+        if (a.isCorrect) earned++;
+      });
+
+      if (typeof r.timeLeft === "number") {
+        totalTimeUsed += (maxTime - r.timeLeft);
+      }
+    });
+
+    // Zeit formatieren
+    function formatTime(seconds) {
+      const min = Math.floor(seconds / 60);
+      const sec = seconds % 60;
+      return `${min}m ${sec}s`;
+    }
 
     const nameSpan = document.createElement("span");
     nameSpan.className = "student-name";
-    nameSpan.textContent = `${studentName}: ${earned}/${total}`;
-
+    nameSpan.textContent = `${studentName}: ${earned}/${total} | ⏱ ${formatTime(totalTimeUsed)}`;
     const buttonGroup = document.createElement("div");
     buttonGroup.style.display = "flex";
     buttonGroup.style.gap = "5px";
@@ -393,13 +411,23 @@ document.addEventListener("DOMContentLoaded", () => {
       const answers = Object.values(result.answers);
       let x = margin;
       let y = 60;
-      let totalPoints = 0;
-      answers.forEach(a => { if (a.isCorrect) totalPoints++; });
+      let totalPoints = answers.filter(a => a.isCorrect).length;
+
+      const maxTime = 600;
+      const timeUsed = (typeof result.timeLeft === "number")
+        ? (maxTime - result.timeLeft)
+        : 0;
+
+      function formatTime(seconds) {
+        const min = Math.floor(seconds / 60);
+        const sec = seconds % 60;
+        return `${min}m ${sec}s`;
+      }
 
       doc.setFontSize(14);
       doc.text(`${studentName}`, margin, 30);
       doc.setFontSize(10);
-      doc.text(`Datum: ${date} | Gesamtpunkte: ${totalPoints}`, margin, 45);
+      doc.text(`Datum: ${date} | Gesamtpunkte: ${totalPoints} | Zeit: ${formatTime(timeUsed)}`, margin, 45);
       doc.setFontSize(fontSize);
 
       answers.forEach((ansObj, i) => {
@@ -464,10 +492,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let totalPoints = answers.filter(a => a.isCorrect).length;
 
+        const maxTime = 600; // ⬅ ggf. anpassen
+        const timeUsed = (typeof studentResults.timeLeft === "number")
+          ? (maxTime - studentResults.timeLeft)
+          : 0;
+
+        function formatTime(seconds) {
+          const min = Math.floor(seconds / 60);
+          const sec = seconds % 60;
+          return `${min}m ${sec}s`;
+        }
+
         doc.setFontSize(14);
         doc.text(`${studentName}`, margin, 30);
         doc.setFontSize(10);
-        doc.text(`Datum: ${date} | Gesamtpunkte: ${totalPoints}`, margin, 45);
+        doc.text(
+          `Datum: ${date} | Gesamtpunkte: ${totalPoints} | Zeit: ${formatTime(timeUsed)}`,
+          margin,
+          45
+        );
         doc.setFontSize(fontSize);
 
         answers.forEach((ansObj, i) => {
@@ -518,7 +561,8 @@ document.addEventListener("DOMContentLoaded", () => {
     doc.setFont("helvetica", "bold");
     let y = 85;
     doc.text("Schüler", margin, y);
-    doc.text("Gesamtpunkte", pageWidth - margin - 100, y);
+    doc.text("Gesamtpunkte", pageWidth - margin - 175, y);
+    doc.text("Benötigte Zeit", pageWidth - margin - 80, y);
     y += rowHeight;
 
     const students = Object.keys(dateGroupData).sort();
@@ -528,15 +572,29 @@ document.addEventListener("DOMContentLoaded", () => {
       const studentResults = dateGroupData[studentName];
       let totalPoints = 0;
       let totalQuestions = 0;
+      let totalTimeUsed = 0;
+      const maxTime = 600;
+
       studentResults.forEach(r => {
         Object.values(r.answers).forEach(a => {
           totalQuestions++;
           if (a.isCorrect) totalPoints++;
         });
+
+        if (typeof r.timeLeft === "number") {
+          totalTimeUsed += (maxTime - r.timeLeft);
+        }
       });
 
+      function formatTime(seconds) {
+        const min = Math.floor(seconds / 60);
+        const sec = seconds % 60;
+        return `${min}m ${sec}s`;
+      }
+
       doc.text(studentName, margin, y);
-      doc.text(`${totalPoints} / ${totalQuestions}`, pageWidth - margin - 100, y);
+      doc.text(`${totalPoints} / ${totalQuestions}`, pageWidth - margin - 150, y);
+      doc.text(formatTime(totalTimeUsed), pageWidth - margin - 70, y);
       y += rowHeight;
 
       if (y > doc.internal.pageSize.height - margin) {
@@ -545,7 +603,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // Tabellenüberschrift auf neuer Seite erneut
         doc.setFont("helvetica", "bold");
         doc.text("Schüler", margin, y);
-        doc.text("Gesamtpunkte", pageWidth - margin - 100, y);
+        doc.text("Gesamtpunkte", pageWidth - margin - 150, y);
+        doc.text("Zeit", pageWidth - margin - 70, y);
         y += rowHeight;
         doc.setFont("helvetica", "normal");
       }

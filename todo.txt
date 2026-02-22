@@ -14,4 +14,4 @@
 - Und die Aufgabe 10x10 ist z.B. über zwei Zeilen. Das ist auch doof. Die Aufgabe sollte komplett nebeneinander stehen
 - Und die Namen der Lehrer brauchen wir nicht
 - "Abschicken" Button weiter nach unten X
-- Benötigte Zeit anzeigen
+- Benötigte Zeit anzeigen X

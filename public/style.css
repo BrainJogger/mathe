@@ -169,7 +169,6 @@ button:hover {
 
 /* Aktive Seite (Blau hat höchste Priorität) */
 .page-active {
-  background-color: #4a90e2 !important;
   color: white !important;
   transform: scale(1.15);
 }

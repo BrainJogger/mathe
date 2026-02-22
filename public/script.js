@@ -33,6 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const pageIndicator = document.getElementById("pageIndicator");
 
+  let startTime = null;
+
   // --- Utility ---
   function formatTime(sec) {
     const m = Math.floor(sec / 60);
@@ -220,6 +222,16 @@ document.addEventListener("DOMContentLoaded", () => {
       timerInterval = null;
     }
 
+    // ⭐ BENÖTIGTE ZEIT BERECHNEN
+    const endTime = Date.now();
+    let durationSeconds = 0;
+
+    if (startTime) {
+      durationSeconds = Math.floor((endTime - startTime) / 1000);
+    }
+
+    const durationFormatted = formatTime(durationSeconds);
+
     if (!selectedStudent) {
       alert("Kein Schüler ausgewählt.");
       return;
@@ -257,7 +269,10 @@ document.addEventListener("DOMContentLoaded", () => {
       // Ergebnisse anzeigen
       testDiv.style.display = "none";
       resultDiv.style.display = "block";
-      timerResultEl.textContent = `⏱ Verbleibende Zeit: ${formatTime(timeLeft)}`;
+      timerResultEl.innerHTML = `
+      🕒
+      Benötigte Zeit: <strong>${durationFormatted}</strong>
+      `;
 
       correctionsContainer.innerHTML = "";
       keys.forEach((k, idx) => {
@@ -364,6 +379,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!isCorrect) return;
 
     await loadTasks();
+
+    startTime = Date.now(); // ⭐ STARTZEIT SPEICHERN
+
     startBox.style.display = "none";
     testDiv.style.display = "block";
     startTimer();
