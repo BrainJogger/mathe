@@ -303,11 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (correctCount >= 95 && correctCount < 100) {
         message = "Super! Weiter so!";
       } else if (correctCount === 100) {
-        if (selectedStudent.lehrer) {
-          message = `Unglaublich! Du bist ein Einmaleins-Profi! ${selectedStudent.lehrer} ist stolz auf dich!`;
-        } else {
           message = "Unglaublich! Du bist ein Einmaleins-Profi! Dein Lehrer ist stolz auf dich!";
-        }
       }
 
       if (message) {
