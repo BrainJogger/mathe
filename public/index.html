@@ -30,13 +30,16 @@
         <option value="">Wähle Schüler</option>
       </select>
 
-      <button id="startBtn">🚀 Test starten</button>
+      <div class="start-actions">
+        <button id="startMulBtn">🚀 Einmaleins<br>Meisterprüfung</button>
+        <button id="startDivBtn">🚀 Einsdurcheins<br>Meisterprüfung</button>
+      </div>
     </div>
 
 
     <!-- Test-Bereich -->
     <div id="test" class="card" style="display:none">
-      <h2>Beantworte die Aufgaben</h2>
+      <h2 id="testTitle">Beantworte die Aufgaben</h2>
       <div id="timer" class="timer"></div>
       <div id="taskContainer" class="task-grid"></div>
       <div id="pageIndicator" class="page-indicator" style="margin-bottom:10px; font-weight:bold;"></div>

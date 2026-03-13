@@ -81,6 +81,36 @@ button:hover {
   transform: scale(1.05);
 }
 
+.start-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.start-actions button {
+  min-width: 220px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border-radius: 16px;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.15);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.2s ease;
+}
+
+.start-actions button:active {
+  transform: translateY(4px);
+  box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+}
+
+#startMulBtn {
+  background: linear-gradient(180deg, #ffce5a 0%, #ff9f1c 100%);
+}
+
+#startDivBtn {
+  background: linear-gradient(180deg, #7ce3ff 0%, #3aa2ff 100%);
+}
+
 /* Timer */
 .timer {
   font-size: 1.4rem;

@@ -51,7 +51,7 @@ ensureFile(CLASSES_FILE, "[]");
 ensureFile(TEACHERS_FILE, "[]");
 
 // --- Aufgaben generieren ---
-function generateTasks() {
+function generateMultiplicationTasks() {
   const allTasks = [];
   for (let i = 1; i <= 10; i++) {
     for (let j = 1; j <= 10; j++) {
@@ -64,7 +64,25 @@ function generateTasks() {
   selected.forEach((task, idx) => (tasks[`q${idx + 1}`] = task));
   return tasks;
 }
-const tasks = generateTasks();
+function generateDivisionTasks() {
+  const allTasks = [];
+  for (let divisor = 1; divisor <= 10; divisor++) {
+    for (let quotient = 1; quotient <= 10; quotient++) {
+      const dividend = divisor * quotient;
+      allTasks.push({ question: `${dividend} : ${divisor}`, solution: quotient });
+    }
+  }
+  allTasks.sort(() => 0.5 - Math.random());
+  const selected = allTasks.slice(0, 100);
+  const tasks = {};
+  selected.forEach((task, idx) => (tasks[`q${idx + 1}`] = task));
+  return tasks;
+}
+
+const tasksByMode = {
+  mul: generateMultiplicationTasks(),
+  div: generateDivisionTasks(),
+};
 
 // --- 🔐 Lehrer-Login / Liste ---
 app.get("/api/teachers", (req, res) => {
@@ -199,12 +217,14 @@ app.delete("/api/students/:id", (req, res) => {
 
 // --- Aufgaben API ---
 app.get("/api/tasks", (req, res) => {
+  const mode = (req.query.mode || "mul").toString().toLowerCase();
+  const tasks = tasksByMode[mode] || tasksByMode.mul;
   res.json(tasks);
 });
 
 // --- Ergebnisse absenden ---
 app.post("/submit", (req, res) => {
-  const { studentId, answers, timeLeft } = req.body;
+  const { studentId, mode, answers, timeLeft } = req.body;
   if (!studentId) return res.status(400).json({ error: "studentId erforderlich" });
 
   const students = readJSON(STUDENTS_FILE);
@@ -223,13 +243,14 @@ app.post("/submit", (req, res) => {
     return res.status(409).json({ error: "Für heute wurde bereits eine Prüfung abgelegt" });
   }
 
+  const taskSet = tasksByMode[(mode || "mul").toString().toLowerCase()] || tasksByMode.mul;
   const corrections = {};
-  for (let key in tasks) {
-    const correct = tasks[key].solution;
+  for (let key in taskSet) {
+    const correct = taskSet[key].solution;
     const provided = answers && answers[key];
     const given = provided && typeof provided === "object" ? provided.given ?? provided : provided;
     corrections[key] = {
-      question: tasks[key].question,
+      question: taskSet[key].question,
       given,
       correct,
       isCorrect: Number(given) === correct,
@@ -248,6 +269,7 @@ app.post("/submit", (req, res) => {
     jahrgang: student.jahrgang,
     lehrjahr: student.lehrjahr || student.jahrgang,
     lehrer: lehrerOfStudent,
+    mode: (mode || "mul").toString().toLowerCase(),
     answers,
     corrections,
     timeLeft,

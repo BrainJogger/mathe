@@ -299,9 +299,32 @@ document.addEventListener("DOMContentLoaded", () => {
       return `${min}m ${sec}s`;
     }
 
+    const modes = [...new Set(studentResults.map(r => (r.mode || "mul").toString().toLowerCase()))];
+    const modeLabel = modes.length === 1
+      ? (modes[0] === "div" ? "Einsdurcheins" : "Einsmaleins")
+      : modes.map(m => (m === "div" ? "Einsdurcheins" : "Einsmaleins")).join(", ");
+
     const nameSpan = document.createElement("span");
     nameSpan.className = "student-name";
-    nameSpan.textContent = `${studentName}: ${earned}/${total} | ⏱ ${formatTime(totalTimeUsed)}`;
+    nameSpan.textContent = `${studentName}: ${earned}/${total} | ⏱ ${formatTime(totalTimeUsed)} `;
+
+    const modeBadge = document.createElement("span");
+    modeBadge.className = "mode-badge";
+    const modeIcon = document.createElement("span");
+    modeIcon.className = "mode-icon";
+    if (modes.length === 1) {
+      modeIcon.textContent = modes[0] === "div" ? "÷" : "×";
+      modeBadge.classList.add(modes[0] === "div" ? "mode-div" : "mode-mul");
+    } else {
+      modeIcon.textContent = "×/÷";
+      modeBadge.classList.add("mode-mixed");
+    }
+    const modeText = document.createElement("span");
+    modeText.className = "mode-text";
+    modeText.textContent = modeLabel;
+    modeBadge.appendChild(modeIcon);
+    modeBadge.appendChild(modeText);
+    nameSpan.appendChild(modeBadge);
     const buttonGroup = document.createElement("div");
     buttonGroup.style.display = "flex";
     buttonGroup.style.gap = "5px";
@@ -321,8 +344,8 @@ document.addEventListener("DOMContentLoaded", () => {
     studentGroup.appendChild(headerDiv);
 
     const dateDiv = document.createElement("div");
+    dateDiv.className = "student-meta";
     dateDiv.textContent = `Datum: ${date}`;
-    dateDiv.style.fontSize = "0.8em";
     studentGroup.appendChild(dateDiv);
 
     const answersContainer = document.createElement("div");

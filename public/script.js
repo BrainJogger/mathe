@@ -12,15 +12,18 @@ document.addEventListener("DOMContentLoaded", () => {
   let answersCache = {};
   let selectedStudent = null; // { id, name, klasse, jahrgang, lehrer }
   let isSubmitting = false;
+  let selectedMode = "mul"; // "mul" | "div"
 
   // --- Elements ---
   const startBox = document.getElementById("start");
   const classSelect = document.getElementById("selectClass");
   const yearSelect = document.getElementById("selectYear");
   const studentSelect = document.getElementById("selectStudent");
-  const startBtn = document.getElementById("startBtn");
+  const startMulBtn = document.getElementById("startMulBtn");
+  const startDivBtn = document.getElementById("startDivBtn");
 
   const testDiv = document.getElementById("test");
+  const testTitle = document.getElementById("testTitle");
   const timerEl = document.getElementById("timer");
   const tasksContainer = document.getElementById("taskContainer");
   const paginationDiv = document.getElementById("pagination");
@@ -128,9 +131,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Aufgaben laden & rendern ---
-  async function loadTasks() {
+  async function loadTasks(mode) {
     try {
-      const res = await fetch("/api/tasks");
+      const res = await fetch(`/api/tasks?mode=${encodeURIComponent(mode)}`);
       if (!res.ok) throw new Error("Fehler beim Laden der Aufgaben");
       tasks = await res.json();
       renderPage(0);
@@ -260,7 +263,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     try {
-      const payload = { studentId: selectedStudent.id, answers: structuredAnswers, timeLeft };
+      const payload = { studentId: selectedStudent.id, mode: selectedMode, answers: structuredAnswers, timeLeft };
       const res = await fetch("/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -356,7 +359,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  startBtn.addEventListener("click", async () => {
+  async function startTest(mode) {
+    selectedMode = mode;
     const studentId = studentSelect.value;
     if (!studentId) return alert("Bitte Klasse, Jahrgang und Schüler auswählen.");
 
@@ -396,14 +400,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const isCorrect = confirm(`Bist du sicher, dass du ${selectedStudent.name} bist?`);
     if (!isCorrect) return;
 
-    await loadTasks();
+    if (testTitle) {
+      testTitle.textContent = selectedMode === "div"
+        ? "Beantworte die Teilaufgaben"
+        : "Beantworte die Malaufgaben";
+    }
+    await loadTasks(selectedMode);
 
     startTime = Date.now(); // ⭐ STARTZEIT SPEICHERN
 
     startBox.style.display = "none";
     testDiv.style.display = "block";
     startTimer();
-  });
+  }
+
+  startMulBtn.addEventListener("click", () => startTest("mul"));
+  startDivBtn.addEventListener("click", () => startTest("div"));
 
 
   submitBtn.addEventListener("click", () => {
