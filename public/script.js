@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentPage = 0;
   let answersCache = {};
   let selectedStudent = null; // { id, name, klasse, jahrgang, lehrer }
+  let isSubmitting = false;
 
   // --- Elements ---
   const startBox = document.getElementById("start");
@@ -217,6 +218,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Antworten absenden ---
   async function submitAnswers() {
+    if (isSubmitting) return;
+    isSubmitting = true;
+    if (submitBtn) submitBtn.disabled = true;
+
     if (timerInterval) {
       clearInterval(timerInterval);
       timerInterval = null;
@@ -322,6 +327,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       console.error(err);
       alert("Fehler beim Absenden: " + err.message);
+      isSubmitting = false;
+      if (submitBtn) submitBtn.disabled = false;
     }
   }
 

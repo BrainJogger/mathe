@@ -35,6 +35,14 @@ function writeJSON(filePath, data) {
 function normalizeName(s) {
   return (s || "").toString().trim().toLowerCase();
 }
+function toDateKey(d) {
+  const date = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(date.getTime())) return "";
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 // Sicherstellen, dass JSON-Dateien existieren
 ensureFile(RESULTS_FILE, "[]");
@@ -204,6 +212,17 @@ app.post("/submit", (req, res) => {
   const student = students.find(s => s.id === studentId);
   if (!student) return res.status(400).json({ error: "Ungültiger Schüler (studentId)" });
 
+  const results = readJSON(RESULTS_FILE);
+  const todayKey = toDateKey(new Date());
+  const alreadyDone = results.some(r =>
+    r.studentId === studentId &&
+    r.submittedAt &&
+    toDateKey(r.submittedAt) === todayKey
+  );
+  if (alreadyDone) {
+    return res.status(409).json({ error: "Für heute wurde bereits eine Prüfung abgelegt" });
+  }
+
   const corrections = {};
   for (let key in tasks) {
     const correct = tasks[key].solution;
@@ -221,7 +240,6 @@ app.post("/submit", (req, res) => {
   const classObj = classes.find(c => c.name === student.klasse && (String(c.jahrgang) === String(student.jahrgang) || !c.jahrgang));
   const lehrerOfStudent = classObj ? classObj.lehrer : "";
 
-  let results = readJSON(RESULTS_FILE);
   const entry = {
     id: Date.now(),
     studentId: student.id,
@@ -294,12 +312,11 @@ app.get("/api/check-attempt/:studentId", (req, res) => {
   if (!studentId) return res.status(400).json({ error: "studentId erforderlich" });
 
   const results = readJSON(RESULTS_FILE);
-  const today = new Date().toISOString().split("T")[0]; // nur Datum, ohne Uhrzeit
-
+  const todayKey = toDateKey(new Date()); // nur Datum, ohne Uhrzeit (lokal)
   const alreadyDone = results.some(r =>
     r.studentId === studentId &&
     r.submittedAt &&
-    r.submittedAt.startsWith(today)
+    toDateKey(r.submittedAt) === todayKey
   );
 
   res.json({ alreadyDone });
