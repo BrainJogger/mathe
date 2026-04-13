@@ -51,20 +51,101 @@ ensureFile(CLASSES_FILE, "[]");
 ensureFile(TEACHERS_FILE, "[]");
 
 // --- Aufgaben generieren ---
-function generateTasks() {
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function selectTasks(allTasks, count) {
+  const shuffled = shuffle([...allTasks]);
+  const selected = shuffled.slice(0, count);
+  const tasks = {};
+  selected.forEach((task, idx) => (tasks[`q${idx + 1}`] = task));
+  return tasks;
+}
+
+function generateMultiplicationTasksSmall() {
   const allTasks = [];
   for (let i = 1; i <= 10; i++) {
     for (let j = 1; j <= 10; j++) {
       allTasks.push({ question: `${i} · ${j}`, solution: i * j });
     }
   }
-  allTasks.sort(() => 0.5 - Math.random());
-  const selected = allTasks.slice(0, 100);
-  const tasks = {};
-  selected.forEach((task, idx) => (tasks[`q${idx + 1}`] = task));
-  return tasks;
+  return selectTasks(allTasks, 100);
 }
-const tasks = generateTasks();
+
+function generateDivisionTasksSmall() {
+  const allTasks = [];
+  for (let divisor = 1; divisor <= 10; divisor++) {
+    for (let quotient = 1; quotient <= 10; quotient++) {
+      const dividend = divisor * quotient;
+      allTasks.push({ question: `${dividend} : ${divisor}`, solution: quotient });
+    }
+  }
+  return selectTasks(allTasks, 100);
+}
+
+function generateMultiplicationTasksBig() {
+  const allTasks = [];
+  // Grundschul-tauglich: immer eine "runde" Zahl und ein einfacher Faktor
+  const roundFactors = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000];
+  const easyFactors = [2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 15, 20];
+
+  for (const r of roundFactors) {
+    for (const f of easyFactors) {
+      allTasks.push({ question: `${r} · ${f}`, solution: r * f });
+    }
+  }
+  return selectTasks(allTasks, 100);
+}
+
+function generateDivisionTasksBig() {
+  const allTasks = [];
+  // Grundschul-tauglich: Divisoren 1-9 oder runde Zehner, Ergebnis klein und rund
+  const divisorsSingle = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const divisorsTens = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+  const easyQuotients = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20];
+
+  for (const d of divisorsSingle) {
+    for (const q of easyQuotients) {
+      const dividend = d * q;
+      if (dividend >= 10) {
+        allTasks.push({ question: `${dividend} : ${d}`, solution: q });
+      }
+    }
+  }
+
+  for (const d of divisorsTens) {
+    for (const q of easyQuotients) {
+      const dividend = d * q;
+      allTasks.push({ question: `${dividend} : ${d}`, solution: q });
+    }
+  }
+
+  // Hunderter/Tausender mit runden Divisoren, Ergebnis weiterhin klein
+  const roundDivisors = [10, 20, 50, 100];
+  const roundQuotients = [2, 4, 5, 8, 10, 12, 15, 20];
+  for (const d of roundDivisors) {
+    for (const q of roundQuotients) {
+      const dividend = d * q;
+      if (dividend >= 100) {
+        allTasks.push({ question: `${dividend} : ${d}`, solution: q });
+      }
+    }
+  }
+
+  return selectTasks(allTasks, 100);
+}
+
+const tasksByMode = {
+  mul: generateMultiplicationTasksSmall(),
+  div: generateDivisionTasksSmall(),
+  mul_big: generateMultiplicationTasksBig(),
+  div_big: generateDivisionTasksBig(),
+};
 
 // --- 🔐 Lehrer-Login / Liste ---
 app.get("/api/teachers", (req, res) => {
@@ -199,12 +280,14 @@ app.delete("/api/students/:id", (req, res) => {
 
 // --- Aufgaben API ---
 app.get("/api/tasks", (req, res) => {
+  const mode = (req.query.mode || "mul").toString().toLowerCase();
+  const tasks = tasksByMode[mode] || tasksByMode.mul;
   res.json(tasks);
 });
 
 // --- Ergebnisse absenden ---
 app.post("/submit", (req, res) => {
-  const { studentId, answers, timeLeft } = req.body;
+  const { studentId, mode, answers, timeLeft } = req.body;
   if (!studentId) return res.status(400).json({ error: "studentId erforderlich" });
 
   const students = readJSON(STUDENTS_FILE);
@@ -223,13 +306,14 @@ app.post("/submit", (req, res) => {
     return res.status(409).json({ error: "Für heute wurde bereits eine Prüfung abgelegt" });
   }
 
+  const taskSet = tasksByMode[(mode || "mul").toString().toLowerCase()] || tasksByMode.mul;
   const corrections = {};
-  for (let key in tasks) {
-    const correct = tasks[key].solution;
+  for (let key in taskSet) {
+    const correct = taskSet[key].solution;
     const provided = answers && answers[key];
     const given = provided && typeof provided === "object" ? provided.given ?? provided : provided;
     corrections[key] = {
-      question: tasks[key].question,
+      question: taskSet[key].question,
       given,
       correct,
       isCorrect: Number(given) === correct,
@@ -248,6 +332,7 @@ app.post("/submit", (req, res) => {
     jahrgang: student.jahrgang,
     lehrjahr: student.lehrjahr || student.jahrgang,
     lehrer: lehrerOfStudent,
+    mode: (mode || "mul").toString().toLowerCase(),
     answers,
     corrections,
     timeLeft,

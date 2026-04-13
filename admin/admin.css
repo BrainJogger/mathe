@@ -185,6 +185,60 @@ input[type=checkbox]:checked+span {
   color:#ff6f61;
   cursor:pointer;
 }
+.student-name .mode-badge {
+  margin-left: 6px;
+}
+
+.student-meta {
+  font-size: 0.75rem;
+  margin-bottom: 4px;
+}
+
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.mode-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.mode-mul {
+  background: #e8f2ff;
+  color: #1e3a8a;
+  border-color: #c7ddff;
+}
+
+.mode-div {
+  background: #fff2e0;
+  color: #9a3412;
+  border-color: #ffd9b0;
+}
+
+.mode-mul-big {
+  background: #e9ffe8;
+  color: #0f5f2d;
+  border-color: #bff3c4;
+}
+
+.mode-div-big {
+  background: #f0ebff;
+  color: #4a2ba8;
+  border-color: #d6ccff;
+}
+
+.mode-mixed {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #e5e7eb;
+}
 
 /* Datum */
 
