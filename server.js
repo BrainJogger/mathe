@@ -91,12 +91,15 @@ function generateDivisionTasksSmall() {
 function generateMultiplicationTasksBig() {
   const allTasks = [];
   // Grundschul-tauglich: immer eine "runde" Zahl und ein einfacher Faktor
-  const roundFactors = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000];
+  const roundFactors = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 900];
   const easyFactors = [2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 15, 20];
 
   for (const r of roundFactors) {
     for (const f of easyFactors) {
-      allTasks.push({ question: `${r} · ${f}`, solution: r * f });
+      const swap = Math.random() < 0.5;
+      const a = swap ? f : r;
+      const b = swap ? r : f;
+      allTasks.push({ question: `${a} · ${b}`, solution: r * f });
     }
   }
   return selectTasks(allTasks, 100);
@@ -140,12 +143,33 @@ function generateDivisionTasksBig() {
   return selectTasks(allTasks, 100);
 }
 
-const tasksByMode = {
-  mul: generateMultiplicationTasksSmall(),
-  div: generateDivisionTasksSmall(),
-  mul_big: generateMultiplicationTasksBig(),
-  div_big: generateDivisionTasksBig(),
+const taskGenerators = {
+  mul: generateMultiplicationTasksSmall,
+  div: generateDivisionTasksSmall,
+  mul_big: generateMultiplicationTasksBig,
+  div_big: generateDivisionTasksBig,
 };
+
+const tasksByStudent = new Map();
+const TASK_TTL_MS = 2 * 60 * 60 * 1000; // 2 Stunden
+
+function buildTaskKey(studentId, mode) {
+  return `${studentId}::${mode}`;
+}
+
+function getTaskSet(mode) {
+  const generator = taskGenerators[mode] || taskGenerators.mul;
+  return generator();
+}
+
+function cleanupOldTasks() {
+  const now = Date.now();
+  for (const [key, value] of tasksByStudent.entries()) {
+    if (!value || (now - value.createdAt) > TASK_TTL_MS) {
+      tasksByStudent.delete(key);
+    }
+  }
+}
 
 // --- 🔐 Lehrer-Login / Liste ---
 app.get("/api/teachers", (req, res) => {
@@ -281,7 +305,12 @@ app.delete("/api/students/:id", (req, res) => {
 // --- Aufgaben API ---
 app.get("/api/tasks", (req, res) => {
   const mode = (req.query.mode || "mul").toString().toLowerCase();
-  const tasks = tasksByMode[mode] || tasksByMode.mul;
+  const studentId = req.query.studentId;
+  if (!studentId) return res.status(400).json({ error: "studentId erforderlich" });
+
+  cleanupOldTasks();
+  const tasks = getTaskSet(mode);
+  tasksByStudent.set(buildTaskKey(studentId, mode), { tasks, createdAt: Date.now() });
   res.json(tasks);
 });
 
@@ -306,7 +335,14 @@ app.post("/submit", (req, res) => {
     return res.status(409).json({ error: "Für heute wurde bereits eine Prüfung abgelegt" });
   }
 
-  const taskSet = tasksByMode[(mode || "mul").toString().toLowerCase()] || tasksByMode.mul;
+  const normalizedMode = (mode || "mul").toString().toLowerCase();
+  cleanupOldTasks();
+  const cacheKey = buildTaskKey(studentId, normalizedMode);
+  const cached = tasksByStudent.get(cacheKey);
+  if (!cached) {
+    return res.status(409).json({ error: "Keine Aufgaben gefunden. Bitte starte die Prüfung neu." });
+  }
+  const taskSet = cached.tasks;
   const corrections = {};
   for (let key in taskSet) {
     const correct = taskSet[key].solution;
@@ -332,13 +368,14 @@ app.post("/submit", (req, res) => {
     jahrgang: student.jahrgang,
     lehrjahr: student.lehrjahr || student.jahrgang,
     lehrer: lehrerOfStudent,
-    mode: (mode || "mul").toString().toLowerCase(),
+    mode: normalizedMode,
     answers,
     corrections,
     timeLeft,
     submittedAt: new Date().toISOString(),
   };
 
+  tasksByStudent.delete(cacheKey);
   results.push(entry);
   writeJSON(RESULTS_FILE, results);
 

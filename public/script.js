@@ -145,9 +145,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Aufgaben laden & rendern ---
-  async function loadTasks(mode) {
+  async function loadTasks(mode, studentId) {
     try {
-      const res = await fetch(`/api/tasks?mode=${encodeURIComponent(mode)}`);
+      const res = await fetch(`/api/tasks?mode=${encodeURIComponent(mode)}&studentId=${encodeURIComponent(studentId)}`);
       if (!res.ok) throw new Error("Fehler beim Laden der Aufgaben");
       tasks = await res.json();
       renderPage(0);
@@ -423,7 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
       };
       testTitle.textContent = titles[selectedMode] || "Beantworte die Aufgaben";
     }
-    await loadTasks(selectedMode);
+    await loadTasks(selectedMode, selectedStudent.id);
 
     startTime = Date.now(); // ⭐ STARTZEIT SPEICHERN
 
