@@ -148,3 +148,5 @@ vite.config.ts.timestamp-*
 
 nohup.out
 start.sh
+
+.codex
