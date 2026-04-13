@@ -434,8 +434,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const checkData = await checkRes.json();
 
       if (checkData.alreadyDone) {
-        alert("Du hast heute bereits eine Prüfung abgelegt.");
-        return; // Test wird nicht gestartet
+        //alert("Du hast heute bereits eine Prüfung abgelegt.");
+        //return; // Test wird nicht gestartet
       }
     } catch (err) {
       console.error("Fehler bei Prüfungsprüfung", err);
