@@ -418,8 +418,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const titles = {
         mul: "Einmaleins Prüfung",
         div: "Einsdurcheins Meisterprüfung",
-        mul_big: "Großes Einmaleins Meisterprüfung",
-        div_big: "Großes Einsdurcheins Meisterprüfung",
+        mul_big: "Große Einmaleins Meisterprüfung",
+        div_big: "Große Einsdurcheins Meisterprüfung",
       };
       testTitle.textContent = titles[selectedMode] || "Beantworte die Aufgaben";
     }
