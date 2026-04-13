@@ -42,6 +42,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let startTime = null;
 
+  function isFourthClass(klasseValue) {
+    return String(klasseValue || "").includes("4");
+  }
+
+  function setYearVisibility(klasseValue) {
+    const shouldHide = isFourthClass(klasseValue);
+    const yearLabel = document.querySelector('label[for="selectYear"]');
+    if (yearLabel) yearLabel.style.display = shouldHide ? "none" : "";
+    yearSelect.style.display = shouldHide ? "none" : "";
+  }
+
   function setSubmittingUI(isLoading) {
     isSubmitting = isLoading;
     if (submitBtn) {
@@ -98,6 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Speichern für spätere Nutzung
       window.allClasses = classes;
+      setYearVisibility(classSelect.value);
     } catch (e) {
       console.error("Fehler beim Laden der Klassen", e);
     }
@@ -108,6 +120,26 @@ document.addEventListener("DOMContentLoaded", () => {
     yearSelect.innerHTML = `<option value="">Wähle Jahrgang</option>`;
     studentSelect.innerHTML = `<option value="">Wähle Schüler</option>`;
     studentSelect.disabled = true;
+
+    if (isFourthClass(klasse)) {
+      const yearsForClass = window.allClasses
+        .filter(c => c.name === klasse)
+        .map(c => c.jahrgang)
+        .filter(y => y && y.trim() !== "");
+      const autoYear = yearsForClass[0] || "";
+      if (autoYear) {
+        const opt = document.createElement("option");
+        opt.value = autoYear;
+        opt.textContent = autoYear;
+        yearSelect.appendChild(opt);
+        yearSelect.value = autoYear;
+        yearSelect.disabled = true;
+        loadStudents(klasse, autoYear);
+      } else {
+        yearSelect.disabled = true;
+      }
+      return;
+    }
 
     const years = window.allClasses
       .filter(c => c.name === klasse)
@@ -352,6 +384,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Events ---
   classSelect.addEventListener("change", () => {
     const klasse = classSelect.value;
+    setYearVisibility(klasse);
     if (klasse) {
       loadYearsForClass(klasse);
     } else {
