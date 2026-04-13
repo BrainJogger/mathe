@@ -110,7 +110,7 @@ function generateDivisionTasksBig() {
   // Grundschul-tauglich: Divisoren 1-9 oder runde Zehner, Ergebnis klein und rund
   const divisorsSingle = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   const divisorsTens = [10, 20, 30, 40, 50, 60, 70, 80, 90];
-  const easyQuotients = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20];
+  const easyQuotients = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 20];
 
   for (const d of divisorsSingle) {
     for (const q of easyQuotients) {
@@ -130,7 +130,7 @@ function generateDivisionTasksBig() {
 
   // Hunderter/Tausender mit runden Divisoren, Ergebnis weiterhin klein
   const roundDivisors = [10, 20, 50, 100];
-  const roundQuotients = [2, 4, 5, 8, 10, 12, 15, 20];
+  const roundQuotients = [2, 4, 5, 8, 10];
   for (const d of roundDivisors) {
     for (const q of roundQuotients) {
       const dividend = d * q;
