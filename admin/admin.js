@@ -171,7 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
             dateContent.style.display = "none";
 
             Object.keys(grouped[cls][year][date]).sort().forEach(studentName => {
-              appendStudentCard(dateContent, grouped[cls][year][date][studentName], studentName, date);
+              appendStudentEntries(dateContent, grouped[cls][year][date][studentName], studentName, date);
             });
 
             // PDF Export Datum
@@ -234,7 +234,7 @@ document.addEventListener("DOMContentLoaded", () => {
             studentDatesContainer.style.display = "none";
 
             Object.keys(grouped[cls][year][studentName]).sort().forEach(date => {
-              appendStudentCard(studentDatesContainer, grouped[cls][year][studentName][date], studentName, date);
+              appendStudentEntries(studentDatesContainer, grouped[cls][year][studentName][date], studentName, date);
             });
 
             studentTitle.addEventListener("click", () => {
@@ -265,6 +265,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
       resultsContainer.appendChild(clsGroup);
     });
+  }
+
+  function appendStudentEntries(container, studentResults, studentName, date) {
+    const entries = Array.isArray(studentResults) ? studentResults : [studentResults];
+    entries
+      .slice()
+      .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0))
+      .forEach(result => appendStudentCard(container, [result], studentName, date));
   }
 
 
@@ -358,7 +366,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const dateDiv = document.createElement("div");
     dateDiv.className = "student-meta";
-    dateDiv.textContent = `Datum: ${date}`;
+    if (studentResults.length === 1 && studentResults[0]?.submittedAt) {
+      const submittedAt = new Date(studentResults[0].submittedAt);
+      const isValidDate = !Number.isNaN(submittedAt.getTime());
+      dateDiv.textContent = isValidDate
+        ? `Datum: ${submittedAt.toLocaleDateString("de-DE")} | Uhrzeit: ${submittedAt.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}`
+        : `Datum: ${date}`;
+    } else {
+      dateDiv.textContent = `Datum: ${date}`;
+    }
     studentGroup.appendChild(dateDiv);
 
     const answersContainer = document.createElement("div");
@@ -405,12 +421,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     deleteBtn.addEventListener("click", async () => {
-      if (!confirm(`Möchtest du alle Ergebnisse von ${studentName} wirklich löschen?`)) return;
+      const resultIds = studentResults.map(r => r.id).filter(Boolean);
+      if (!resultIds.length) return;
+      const confirmationText = resultIds.length === 1
+        ? `Möchtest du dieses Ergebnis von ${studentName} wirklich löschen?`
+        : `Möchtest du alle ${resultIds.length} Ergebnisse von ${studentName} wirklich löschen?`;
+      if (!confirm(confirmationText)) return;
       try {
         for (const result of studentResults) {
           await fetch(`/results/${result.id}`, { method: "DELETE" });
         }
-        results = results.filter(r => r.name !== studentName || r.submittedAt.split("T")[0] !== date);
+        const deletedIds = new Set(resultIds);
+        results = results.filter(r => !deletedIds.has(r.id));
         renderResults();
       } catch (err) {
         console.error("Fehler beim Löschen:", err);
