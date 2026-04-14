@@ -341,7 +341,7 @@ app.post("/submit", (req, res) => {
     toDateKey(r.submittedAt) === todayKey
   );
   if (alreadyDone) {
-    return res.status(409).json({ error: "Für heute wurde bereits eine Prüfung abgelegt" });
+    //return res.status(409).json({ error: "Für heute wurde bereits eine Prüfung abgelegt" });
   }
 
   const normalizedMode = (mode || "mul").toString().toLowerCase();
