@@ -299,9 +299,45 @@ document.addEventListener("DOMContentLoaded", () => {
       return `${min}m ${sec}s`;
     }
 
+    const modeLabels = {
+      mul: "Einmaleins",
+      div: "Einsdurcheins",
+      mul_big: "Großes Einmaleins",
+      div_big: "Großes Einsdurcheins",
+    };
+    const modes = [...new Set(studentResults.map(r => (r.mode || "mul").toString().toLowerCase()))];
+    const modeLabel = modes.length === 1
+      ? (modeLabels[modes[0]] || "Einmaleins")
+      : "Gemischt";
+
     const nameSpan = document.createElement("span");
     nameSpan.className = "student-name";
-    nameSpan.textContent = `${studentName}: ${earned}/${total} | ⏱ ${formatTime(totalTimeUsed)}`;
+    nameSpan.textContent = `${studentName}: ${earned}/${total} | ⏱ ${formatTime(totalTimeUsed)} `;
+
+    const modeBadge = document.createElement("span");
+    modeBadge.className = "mode-badge";
+
+    const modeIcon = document.createElement("span");
+    modeIcon.className = "mode-icon";
+    if (modes.length === 1) {
+      const key = modes[0];
+      modeIcon.textContent = key.startsWith("div") ? "÷" : "×";
+      if (key === "mul_big") modeBadge.classList.add("mode-mul-big");
+      else if (key === "div_big") modeBadge.classList.add("mode-div-big");
+      else if (key === "div") modeBadge.classList.add("mode-div");
+      else modeBadge.classList.add("mode-mul");
+    } else {
+      modeIcon.textContent = "×/÷";
+      modeBadge.classList.add("mode-mixed");
+    }
+
+    const modeText = document.createElement("span");
+    modeText.className = "mode-text";
+    modeText.textContent = modeLabel;
+
+    modeBadge.appendChild(modeIcon);
+    modeBadge.appendChild(modeText);
+    nameSpan.appendChild(modeBadge);
     const buttonGroup = document.createElement("div");
     buttonGroup.style.display = "flex";
     buttonGroup.style.gap = "5px";
@@ -321,8 +357,8 @@ document.addEventListener("DOMContentLoaded", () => {
     studentGroup.appendChild(headerDiv);
 
     const dateDiv = document.createElement("div");
+    dateDiv.className = "student-meta";
     dateDiv.textContent = `Datum: ${date}`;
-    dateDiv.style.fontSize = "0.8em";
     studentGroup.appendChild(dateDiv);
 
     const answersContainer = document.createElement("div");

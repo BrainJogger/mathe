@@ -48,6 +48,12 @@ input[type="text"], input[type="number"] {
   grid-template-columns: repeat(5, 1fr);
   gap: 12px;
   margin: 20px 0;
+  justify-items: stretch;
+}
+
+.task-grid .task,
+.result-grid .task {
+  min-width: 0;
 }
 
 .task {
@@ -58,6 +64,21 @@ input[type="text"], input[type="number"] {
   box-shadow: 0 3px 6px rgba(0,0,0,0.1);
   font-size: 1.1rem;
   font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.task label {
+  white-space: nowrap;
+  text-align: center;
+  display: block;
+}
+
+.task input[type="number"] {
+  width: 80px;
+  margin: 6px auto 0;
+  display: block;
 }
 
 .correct { color: green; font-weight: bold; }
@@ -79,6 +100,67 @@ button {
 button:hover {
   background: #ffa726;
   transform: scale(1.05);
+}
+
+.submit-loading {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-weight: bold;
+  color: #4a90e2;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #cfe3ff;
+  border-top-color: #4a90e2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.start-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.start-actions button {
+  min-width: 230px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border-radius: 16px;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.15);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.2s ease;
+}
+
+.start-actions button:active {
+  transform: translateY(4px);
+  box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+}
+
+#startMulBtn {
+  background: linear-gradient(180deg, #ffce5a 0%, #ff9f1c 100%);
+}
+
+#startDivBtn {
+  background: linear-gradient(180deg, #7ce3ff 0%, #3aa2ff 100%);
+}
+
+#startMulBigBtn {
+  background: linear-gradient(180deg, #9cff8f 0%, #36c275 100%);
+}
+
+#startDivBigBtn {
+  background: linear-gradient(180deg, #c7b6ff 0%, #7b5cff 100%);
 }
 
 /* Timer */

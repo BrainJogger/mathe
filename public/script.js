@@ -12,19 +12,25 @@ document.addEventListener("DOMContentLoaded", () => {
   let answersCache = {};
   let selectedStudent = null; // { id, name, klasse, jahrgang, lehrer }
   let isSubmitting = false;
+  let selectedMode = "mul"; // mul | div | mul_big | div_big
 
   // --- Elements ---
   const startBox = document.getElementById("start");
   const classSelect = document.getElementById("selectClass");
   const yearSelect = document.getElementById("selectYear");
   const studentSelect = document.getElementById("selectStudent");
-  const startBtn = document.getElementById("startBtn");
+  const startMulBtn = document.getElementById("startMulBtn");
+  const startDivBtn = document.getElementById("startDivBtn");
+  const startMulBigBtn = document.getElementById("startMulBigBtn");
+  const startDivBigBtn = document.getElementById("startDivBigBtn");
 
   const testDiv = document.getElementById("test");
+  const testTitle = document.getElementById("testTitle");
   const timerEl = document.getElementById("timer");
   const tasksContainer = document.getElementById("taskContainer");
   const paginationDiv = document.getElementById("pagination");
   const submitBtn = document.getElementById("submitBtn");
+  const submitLoading = document.getElementById("submitLoading");
 
   const resultDiv = document.getElementById("result");
   const timerResultEl = document.getElementById("timerResult");
@@ -35,6 +41,28 @@ document.addEventListener("DOMContentLoaded", () => {
   const pageIndicator = document.getElementById("pageIndicator");
 
   let startTime = null;
+
+  function isFourthClass(klasseValue) {
+    return String(klasseValue || "").includes("4");
+  }
+
+  function setYearVisibility(klasseValue) {
+    const shouldHide = isFourthClass(klasseValue);
+    const yearLabel = document.querySelector('label[for="selectYear"]');
+    if (yearLabel) yearLabel.style.display = shouldHide ? "none" : "";
+    yearSelect.style.display = shouldHide ? "none" : "";
+  }
+
+  function setSubmittingUI(isLoading) {
+    isSubmitting = isLoading;
+    if (submitBtn) {
+      submitBtn.disabled = isLoading;
+      submitBtn.style.display = isLoading ? "none" : "";
+    }
+    if (submitLoading) {
+      submitLoading.style.display = isLoading ? "flex" : "none";
+    }
+  }
 
   // --- Utility ---
   function formatTime(sec) {
@@ -81,6 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Speichern für spätere Nutzung
       window.allClasses = classes;
+      setYearVisibility(classSelect.value);
     } catch (e) {
       console.error("Fehler beim Laden der Klassen", e);
     }
@@ -91,6 +120,26 @@ document.addEventListener("DOMContentLoaded", () => {
     yearSelect.innerHTML = `<option value="">Wähle Jahrgang</option>`;
     studentSelect.innerHTML = `<option value="">Wähle Schüler</option>`;
     studentSelect.disabled = true;
+
+    if (isFourthClass(klasse)) {
+      const yearsForClass = window.allClasses
+        .filter(c => c.name === klasse)
+        .map(c => c.jahrgang)
+        .filter(y => y && y.trim() !== "");
+      const autoYear = yearsForClass[0] || "";
+      if (autoYear) {
+        const opt = document.createElement("option");
+        opt.value = autoYear;
+        opt.textContent = autoYear;
+        yearSelect.appendChild(opt);
+        yearSelect.value = autoYear;
+        yearSelect.disabled = true;
+        loadStudents(klasse, autoYear);
+      } else {
+        yearSelect.disabled = true;
+      }
+      return;
+    }
 
     const years = window.allClasses
       .filter(c => c.name === klasse)
@@ -128,9 +177,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Aufgaben laden & rendern ---
-  async function loadTasks() {
+  async function loadTasks(mode, studentId) {
     try {
-      const res = await fetch("/api/tasks");
+      const res = await fetch(`/api/tasks?mode=${encodeURIComponent(mode)}&studentId=${encodeURIComponent(studentId)}`);
       if (!res.ok) throw new Error("Fehler beim Laden der Aufgaben");
       tasks = await res.json();
       renderPage(0);
@@ -219,8 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Antworten absenden ---
   async function submitAnswers() {
     if (isSubmitting) return;
-    isSubmitting = true;
-    if (submitBtn) submitBtn.disabled = true;
+    setSubmittingUI(true);
 
     if (timerInterval) {
       clearInterval(timerInterval);
@@ -239,6 +287,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!selectedStudent) {
       alert("Kein Schüler ausgewählt.");
+      setSubmittingUI(false);
       return;
     }
 
@@ -260,7 +309,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     try {
-      const payload = { studentId: selectedStudent.id, answers: structuredAnswers, timeLeft };
+      const payload = { studentId: selectedStudent.id, mode: selectedMode, answers: structuredAnswers, timeLeft };
       const res = await fetch("/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -324,17 +373,18 @@ document.addEventListener("DOMContentLoaded", () => {
         scoreEl.appendChild(msgEl);
       }
 
+      setSubmittingUI(false);
     } catch (err) {
       console.error(err);
       alert("Fehler beim Absenden: " + err.message);
-      isSubmitting = false;
-      if (submitBtn) submitBtn.disabled = false;
+      setSubmittingUI(false);
     }
   }
 
   // --- Events ---
   classSelect.addEventListener("change", () => {
     const klasse = classSelect.value;
+    setYearVisibility(klasse);
     if (klasse) {
       loadYearsForClass(klasse);
     } else {
@@ -356,7 +406,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  startBtn.addEventListener("click", async () => {
+  async function startTest(mode) {
+    selectedMode = mode;
     const studentId = studentSelect.value;
     if (!studentId) return alert("Bitte Klasse, Jahrgang und Schüler auswählen.");
 
@@ -383,8 +434,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const checkData = await checkRes.json();
 
       if (checkData.alreadyDone) {
-        alert("Du hast heute bereits eine Prüfung abgelegt.");
-        return; // Test wird nicht gestartet
+        //alert("Du hast heute bereits eine Prüfung abgelegt.");
+        //return; // Test wird nicht gestartet
       }
     } catch (err) {
       console.error("Fehler bei Prüfungsprüfung", err);
@@ -396,14 +447,28 @@ document.addEventListener("DOMContentLoaded", () => {
     const isCorrect = confirm(`Bist du sicher, dass du ${selectedStudent.name} bist?`);
     if (!isCorrect) return;
 
-    await loadTasks();
+    if (testTitle) {
+      const titles = {
+        mul: "Einmaleins Prüfung",
+        div: "Einsdurcheins Meisterprüfung",
+        mul_big: "Große Einmaleins Meisterprüfung",
+        div_big: "Große Einsdurcheins Meisterprüfung",
+      };
+      testTitle.textContent = titles[selectedMode] || "Beantworte die Aufgaben";
+    }
+    await loadTasks(selectedMode, selectedStudent.id);
 
     startTime = Date.now(); // ⭐ STARTZEIT SPEICHERN
 
     startBox.style.display = "none";
     testDiv.style.display = "block";
     startTimer();
-  });
+  }
+
+  startMulBtn.addEventListener("click", () => startTest("mul"));
+  startDivBtn.addEventListener("click", () => startTest("div"));
+  startMulBigBtn.addEventListener("click", () => startTest("mul_big"));
+  startDivBigBtn.addEventListener("click", () => startTest("div_big"));
 
 
   submitBtn.addEventListener("click", () => {
