@@ -107,36 +107,45 @@ function generateMultiplicationTasksBig() {
 
 function generateDivisionTasksBig() {
   const allTasks = [];
-  // Grundschul-tauglich: Divisoren 1-9 oder runde Zehner, Ergebnis klein und rund
-  const divisorsSingle = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-  const divisorsTens = [10, 20, 30, 40, 50, 60, 70, 80, 90];
-  const easyQuotients = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 20];
+  const seen = new Set();
+  const MAX_QUOTIENT = 999; // nie 4-stellig
+  const MAX_DIVIDEND = 999; // nie 4-stellig
 
-  for (const d of divisorsSingle) {
-    for (const q of easyQuotients) {
-      const dividend = d * q;
-      if (dividend >= 10) {
-        allTasks.push({ question: `${dividend} : ${d}`, solution: q });
+  function addTask(dividend, divisor) {
+    if (!dividend || !divisor) return;
+    if (dividend > MAX_DIVIDEND) return;
+    if (dividend % divisor !== 0) return;
+    const quotient = dividend / divisor;
+    if (quotient > MAX_QUOTIENT) return;
+    if (quotient < 2 || quotient > 250) return;
+    const key = `${dividend}:${divisor}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    allTasks.push({ question: `${dividend} : ${divisor}`, solution: quotient });
+  }
+
+  // Grundlage aus dem kleinen 1:1 (2..10), danach mit Nullen "gross" machen.
+  // Idee: Wenn man die Nullen abdeckt, bleibt eine bekannte 1:1-Aufgabe.
+  const baseDivisors = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const baseQuotients = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+  // 1) Gleich viele Nullen bei Dividend und Divisor (z. B. 210:30 -> 21:3)
+  const equalZeroFactors = [10, 100];
+  for (const d of baseDivisors) {
+    for (const q of baseQuotients) {
+      const baseDividend = d * q;
+      for (const factor of equalZeroFactors) {
+        addTask(baseDividend * factor, d * factor);
       }
     }
   }
 
-  for (const d of divisorsTens) {
-    for (const q of easyQuotients) {
-      const dividend = d * q;
-      allTasks.push({ question: `${dividend} : ${d}`, solution: q });
-    }
-  }
-
-  // Hunderter/Tausender mit runden Divisoren, Ergebnis weiterhin klein
-  const roundDivisors = [10, 20, 50, 100];
-  const roundQuotients = [2, 4, 5, 8, 10];
-  for (const d of roundDivisors) {
-    for (const q of roundQuotients) {
-      const dividend = d * q;
-      if (dividend >= 100) {
-        allTasks.push({ question: `${dividend} : ${d}`, solution: q });
-      }
+  // 2) Eine Null nur beim Dividend (z. B. 210:3 -> 21:3)
+  // Dadurch entsteht der gewuenschte Mix mit 2-stelligen Ergebnissen.
+  for (const d of baseDivisors) {
+    for (const q of baseQuotients) {
+      const baseDividend = d * q;
+      addTask(baseDividend * 10, d);
     }
   }
 
