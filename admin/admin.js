@@ -604,6 +604,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const pageWidth = doc.internal.pageSize.width;
     const margin = 20;
     const rowHeight = 28;
+    const maxTime = 600;
 
     // Klasse & Jahrgang
     doc.setFontSize(18);
@@ -619,56 +620,86 @@ document.addEventListener("DOMContentLoaded", () => {
     doc.setFont("helvetica", "bold");
     let y = 85;
     doc.text("Schüler", margin, y);
-    doc.text("Gesamtpunkte", pageWidth - margin - 175, y);
-    doc.text("Benötigte Zeit", pageWidth - margin - 80, y);
+    doc.text("Zeitpunkt", margin + 175, y);
+    doc.text("Typ", margin + 255, y);
+    doc.text("Punkte", pageWidth - margin - 120, y);
+    doc.text("Dauer", pageWidth - margin - 50, y);
     y += rowHeight;
 
     const students = Object.keys(dateGroupData).sort();
+    const summaryRows = [];
 
     doc.setFont("helvetica", "normal");
     students.forEach(studentName => {
-      const studentResults = dateGroupData[studentName];
-      let totalPoints = 0;
-      let totalQuestions = 0;
-      let totalTimeUsed = 0;
-      const maxTime = 600;
+      const studentResults = Array.isArray(dateGroupData[studentName])
+        ? dateGroupData[studentName]
+        : Object.values(dateGroupData[studentName]).flat();
 
-      studentResults.forEach(r => {
-        Object.values(r.answers).forEach(a => {
-          totalQuestions++;
-          if (a.isCorrect) totalPoints++;
+      studentResults.forEach(result => {
+        const answers = Object.values(result.answers || {});
+        const totalQuestions = answers.length;
+        const totalPoints = answers.filter(a => a.isCorrect).length;
+        const timeUsed = (typeof result.timeLeft === "number")
+          ? (maxTime - result.timeLeft)
+          : 0;
+
+        summaryRows.push({
+          studentName,
+          submittedAt: result.submittedAt || "",
+          modeLabel: getModeLabel(result.mode),
+          pointsText: `${totalPoints} / ${totalQuestions}`,
+          durationText: formatDuration(timeUsed)
         });
+      });
+    });
 
-        if (typeof r.timeLeft === "number") {
-          totalTimeUsed += (maxTime - r.timeLeft);
+    summaryRows
+      .sort((a, b) => new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0))
+      .forEach(row => {
+        const submitted = new Date(row.submittedAt);
+        const timestamp = Number.isNaN(submitted.getTime())
+          ? "-"
+          : submitted.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+
+        doc.text(row.studentName, margin, y, { maxWidth: 160 });
+        doc.text(timestamp, margin + 175, y);
+        doc.text(row.modeLabel, margin + 255, y, { maxWidth: 80 });
+        doc.text(row.pointsText, pageWidth - margin - 120, y);
+        doc.text(row.durationText, pageWidth - margin - 50, y);
+        y += rowHeight;
+
+        if (y > doc.internal.pageSize.height - margin) {
+          doc.addPage();
+          y = margin + 20;
+          doc.setFont("helvetica", "bold");
+          doc.text("Schüler", margin, y);
+          doc.text("Zeitpunkt", margin + 175, y);
+          doc.text("Typ", margin + 255, y);
+          doc.text("Punkte", pageWidth - margin - 120, y);
+          doc.text("Dauer", pageWidth - margin - 50, y);
+          y += rowHeight;
+          doc.setFont("helvetica", "normal");
         }
       });
 
-      function formatTime(seconds) {
-        const min = Math.floor(seconds / 60);
-        const sec = seconds % 60;
-        return `${min}m ${sec}s`;
-      }
-
-      doc.text(studentName, margin, y);
-      doc.text(`${totalPoints} / ${totalQuestions}`, pageWidth - margin - 150, y);
-      doc.text(formatTime(totalTimeUsed), pageWidth - margin - 70, y);
-      y += rowHeight;
-
-      if (y > doc.internal.pageSize.height - margin) {
-        doc.addPage();
-        y = margin + 20;
-        // Tabellenüberschrift auf neuer Seite erneut
-        doc.setFont("helvetica", "bold");
-        doc.text("Schüler", margin, y);
-        doc.text("Gesamtpunkte", pageWidth - margin - 150, y);
-        doc.text("Zeit", pageWidth - margin - 70, y);
-        y += rowHeight;
-        doc.setFont("helvetica", "normal");
-      }
-    });
-
     doc.save(`Klasse_${cls}_Jahrgang_${year}_${date}_Übersicht.pdf`);
+  }
+
+  function formatDuration(seconds) {
+    const min = Math.floor(seconds / 60);
+    const sec = seconds % 60;
+    return `${min}m ${sec}s`;
+  }
+
+  function getModeLabel(mode) {
+    const modeLabels = {
+      mul: "Einmaleins",
+      div: "Einsdurcheins",
+      mul_big: "Großes 1x1",
+      div_big: "Großes 1:1",
+    };
+    const key = (mode || "mul").toString().toLowerCase();
+    return modeLabels[key] || "Einmaleins";
   }
 
 
