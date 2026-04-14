@@ -171,7 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
             dateContent.style.display = "none";
 
             Object.keys(grouped[cls][year][date]).sort().forEach(studentName => {
-              appendStudentCard(dateContent, grouped[cls][year][date][studentName], studentName, date);
+              appendStudentEntries(dateContent, grouped[cls][year][date][studentName], studentName, date);
             });
 
             // PDF Export Datum
@@ -234,7 +234,7 @@ document.addEventListener("DOMContentLoaded", () => {
             studentDatesContainer.style.display = "none";
 
             Object.keys(grouped[cls][year][studentName]).sort().forEach(date => {
-              appendStudentCard(studentDatesContainer, grouped[cls][year][studentName][date], studentName, date);
+              appendStudentEntries(studentDatesContainer, grouped[cls][year][studentName][date], studentName, date);
             });
 
             studentTitle.addEventListener("click", () => {
@@ -265,6 +265,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
       resultsContainer.appendChild(clsGroup);
     });
+  }
+
+  function appendStudentEntries(container, studentResults, studentName, date) {
+    const entries = Array.isArray(studentResults) ? studentResults : [studentResults];
+    entries
+      .slice()
+      .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0))
+      .forEach(result => appendStudentCard(container, [result], studentName, date));
   }
 
 
@@ -358,7 +366,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const dateDiv = document.createElement("div");
     dateDiv.className = "student-meta";
-    dateDiv.textContent = `Datum: ${date}`;
+    if (studentResults.length === 1 && studentResults[0]?.submittedAt) {
+      const submittedAt = new Date(studentResults[0].submittedAt);
+      const isValidDate = !Number.isNaN(submittedAt.getTime());
+      dateDiv.textContent = isValidDate
+        ? `Datum: ${submittedAt.toLocaleDateString("de-DE")} | Uhrzeit: ${submittedAt.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}`
+        : `Datum: ${date}`;
+    } else {
+      dateDiv.textContent = `Datum: ${date}`;
+    }
     studentGroup.appendChild(dateDiv);
 
     const answersContainer = document.createElement("div");
@@ -405,12 +421,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     deleteBtn.addEventListener("click", async () => {
-      if (!confirm(`Möchtest du alle Ergebnisse von ${studentName} wirklich löschen?`)) return;
+      const resultIds = studentResults.map(r => r.id).filter(Boolean);
+      if (!resultIds.length) return;
+      const confirmationText = resultIds.length === 1
+        ? `Möchtest du dieses Ergebnis von ${studentName} wirklich löschen?`
+        : `Möchtest du alle ${resultIds.length} Ergebnisse von ${studentName} wirklich löschen?`;
+      if (!confirm(confirmationText)) return;
       try {
         for (const result of studentResults) {
           await fetch(`/results/${result.id}`, { method: "DELETE" });
         }
-        results = results.filter(r => r.name !== studentName || r.submittedAt.split("T")[0] !== date);
+        const deletedIds = new Set(resultIds);
+        results = results.filter(r => !deletedIds.has(r.id));
         renderResults();
       } catch (err) {
         console.error("Fehler beim Löschen:", err);
@@ -582,6 +604,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const pageWidth = doc.internal.pageSize.width;
     const margin = 20;
     const rowHeight = 28;
+    const maxTime = 600;
 
     // Klasse & Jahrgang
     doc.setFontSize(18);
@@ -597,56 +620,86 @@ document.addEventListener("DOMContentLoaded", () => {
     doc.setFont("helvetica", "bold");
     let y = 85;
     doc.text("Schüler", margin, y);
-    doc.text("Gesamtpunkte", pageWidth - margin - 175, y);
-    doc.text("Benötigte Zeit", pageWidth - margin - 80, y);
+    doc.text("Zeitpunkt", margin + 175, y);
+    doc.text("Typ", margin + 255, y);
+    doc.text("Punkte", pageWidth - margin - 120, y);
+    doc.text("Dauer", pageWidth - margin - 50, y);
     y += rowHeight;
 
     const students = Object.keys(dateGroupData).sort();
+    const summaryRows = [];
 
     doc.setFont("helvetica", "normal");
     students.forEach(studentName => {
-      const studentResults = dateGroupData[studentName];
-      let totalPoints = 0;
-      let totalQuestions = 0;
-      let totalTimeUsed = 0;
-      const maxTime = 600;
+      const studentResults = Array.isArray(dateGroupData[studentName])
+        ? dateGroupData[studentName]
+        : Object.values(dateGroupData[studentName]).flat();
 
-      studentResults.forEach(r => {
-        Object.values(r.answers).forEach(a => {
-          totalQuestions++;
-          if (a.isCorrect) totalPoints++;
+      studentResults.forEach(result => {
+        const answers = Object.values(result.answers || {});
+        const totalQuestions = answers.length;
+        const totalPoints = answers.filter(a => a.isCorrect).length;
+        const timeUsed = (typeof result.timeLeft === "number")
+          ? (maxTime - result.timeLeft)
+          : 0;
+
+        summaryRows.push({
+          studentName,
+          submittedAt: result.submittedAt || "",
+          modeLabel: getModeLabel(result.mode),
+          pointsText: `${totalPoints} / ${totalQuestions}`,
+          durationText: formatDuration(timeUsed)
         });
+      });
+    });
 
-        if (typeof r.timeLeft === "number") {
-          totalTimeUsed += (maxTime - r.timeLeft);
+    summaryRows
+      .sort((a, b) => new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0))
+      .forEach(row => {
+        const submitted = new Date(row.submittedAt);
+        const timestamp = Number.isNaN(submitted.getTime())
+          ? "-"
+          : submitted.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+
+        doc.text(row.studentName, margin, y, { maxWidth: 160 });
+        doc.text(timestamp, margin + 175, y);
+        doc.text(row.modeLabel, margin + 255, y, { maxWidth: 80 });
+        doc.text(row.pointsText, pageWidth - margin - 120, y);
+        doc.text(row.durationText, pageWidth - margin - 50, y);
+        y += rowHeight;
+
+        if (y > doc.internal.pageSize.height - margin) {
+          doc.addPage();
+          y = margin + 20;
+          doc.setFont("helvetica", "bold");
+          doc.text("Schüler", margin, y);
+          doc.text("Zeitpunkt", margin + 175, y);
+          doc.text("Typ", margin + 255, y);
+          doc.text("Punkte", pageWidth - margin - 120, y);
+          doc.text("Dauer", pageWidth - margin - 50, y);
+          y += rowHeight;
+          doc.setFont("helvetica", "normal");
         }
       });
 
-      function formatTime(seconds) {
-        const min = Math.floor(seconds / 60);
-        const sec = seconds % 60;
-        return `${min}m ${sec}s`;
-      }
-
-      doc.text(studentName, margin, y);
-      doc.text(`${totalPoints} / ${totalQuestions}`, pageWidth - margin - 150, y);
-      doc.text(formatTime(totalTimeUsed), pageWidth - margin - 70, y);
-      y += rowHeight;
-
-      if (y > doc.internal.pageSize.height - margin) {
-        doc.addPage();
-        y = margin + 20;
-        // Tabellenüberschrift auf neuer Seite erneut
-        doc.setFont("helvetica", "bold");
-        doc.text("Schüler", margin, y);
-        doc.text("Gesamtpunkte", pageWidth - margin - 150, y);
-        doc.text("Zeit", pageWidth - margin - 70, y);
-        y += rowHeight;
-        doc.setFont("helvetica", "normal");
-      }
-    });
-
     doc.save(`Klasse_${cls}_Jahrgang_${year}_${date}_Übersicht.pdf`);
+  }
+
+  function formatDuration(seconds) {
+    const min = Math.floor(seconds / 60);
+    const sec = seconds % 60;
+    return `${min}m ${sec}s`;
+  }
+
+  function getModeLabel(mode) {
+    const modeLabels = {
+      mul: "Einmaleins",
+      div: "Einsdurcheins",
+      mul_big: "Großes 1x1",
+      div_big: "Großes 1:1",
+    };
+    const key = (mode || "mul").toString().toLowerCase();
+    return modeLabels[key] || "Einmaleins";
   }
 
 

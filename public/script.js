@@ -449,7 +449,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (testTitle) {
       const titles = {
-        mul: "Einmaleins Prüfung",
+        mul: "Einmaleins Meisterprüfung",
         div: "Einsdurcheins Meisterprüfung",
         mul_big: "Große Einmaleins Meisterprüfung",
         div_big: "Große Einsdurcheins Meisterprüfung",
