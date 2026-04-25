@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
     filteredResults.forEach(r => {
       const cls = r.klasse;
       const year = r.jahrgang;
-      const date = r.submittedAt.split("T")[0];
+      const date = getIsoDateKey(r.submittedAt);
       const student = r.name;
 
       if (!grouped[cls]) grouped[cls] = {};
@@ -154,7 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const dateTitle = document.createElement("h5");
             dateTitle.className = "class-title";
-            dateTitle.textContent = `Datum: ${date}`;
+            dateTitle.textContent = `Datum: ${formatDateDisplay(date)}`;
             dateTitle.style.display = "flex";
             dateTitle.style.justifyContent = "space-between";
             dateTitle.style.alignItems = "center";
@@ -201,7 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Löschen aller Ergebnisse für dieses Datum
             dateDeleteBtn.addEventListener("click", async e => {
               e.stopPropagation();
-              if (!confirm(`Möchtest du wirklich alle Ergebnisse der Klasse ${cls}, Jahrgang ${year} am ${date} löschen?`)) return;
+              if (!confirm(`Möchtest du wirklich alle Ergebnisse der Klasse ${cls}, Jahrgang ${year} am ${formatDateDisplay(date)} löschen?`)) return;
               try {
                 // grouped[cls][year][date] ist ein Objekt { studentName: [result,...], ... }
                 const studentResultsObj = grouped[cls][year][date];
@@ -401,10 +401,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const submittedAt = new Date(studentResults[0].submittedAt);
       const isValidDate = !Number.isNaN(submittedAt.getTime());
       dateDiv.textContent = isValidDate
-        ? `Datum: ${submittedAt.toLocaleDateString("de-DE")} | Uhrzeit: ${submittedAt.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}`
-        : `Datum: ${date}`;
+        ? `Datum: ${formatDateDisplay(submittedAt)} | Uhrzeit: ${submittedAt.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}`
+        : `Datum: ${formatDateDisplay(date)}`;
     } else {
-      dateDiv.textContent = `Datum: ${date}`;
+      dateDiv.textContent = `Datum: ${formatDateDisplay(date)}`;
     }
     studentGroup.appendChild(dateDiv);
 
@@ -479,6 +479,26 @@ document.addEventListener("DOMContentLoaded", () => {
     return text
       .replace(/⋅/g, "·")   // mathematischer Punkt
       .replace(/×/g, "x");   // optional falls du auch × nutzt
+  }
+
+  function getIsoDateKey(value) {
+    if (!value) return "";
+    const str = String(value);
+    const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "";
+    const yyyy = String(parsed.getFullYear());
+    const mm = String(parsed.getMonth() + 1).padStart(2, "0");
+    const dd = String(parsed.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  function formatDateDisplay(value) {
+    const isoDate = getIsoDateKey(value);
+    if (!isoDate) return value ? String(value) : "-";
+    const [yyyy, mm, dd] = isoDate.split("-");
+    return `${dd}.${mm}.${yyyy}`;
   }
 
   function collectSummaryRows(studentResults, studentName) {
@@ -576,7 +596,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const submitted = new Date(row.submittedAt);
         const dateLabel = Number.isNaN(submitted.getTime())
           ? "-"
-          : submitted.toLocaleDateString("de-DE");
+          : formatDateDisplay(row.submittedAt);
 
         doc.text(row.studentName, margin, y, { maxWidth: 160 });
         doc.text(dateLabel, margin + 175, y);
@@ -651,7 +671,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const submitted = new Date(row.submittedAt);
         const dateLabel = Number.isNaN(submitted.getTime())
           ? "-"
-          : submitted.toLocaleDateString("de-DE");
+          : formatDateDisplay(row.submittedAt);
 
         doc.text(row.studentName, margin, y, { maxWidth: 160 });
         doc.text(dateLabel, margin + 175, y);
@@ -739,7 +759,7 @@ document.addEventListener("DOMContentLoaded", () => {
       doc.setFontSize(14);
       doc.text(`${studentName}`, margin, 30);
       doc.setFontSize(10);
-      doc.text(`Datum: ${date} | Gesamtpunkte: ${totalPoints} | Zeit: ${formatTime(timeUsed)}`, margin, 45);
+      doc.text(`Datum: ${formatDateDisplay(date)} | Gesamtpunkte: ${totalPoints} | Zeit: ${formatTime(timeUsed)}`, margin, 45);
       doc.setFontSize(fontSize);
 
       answers.forEach((ansObj, i) => {
@@ -819,7 +839,7 @@ document.addEventListener("DOMContentLoaded", () => {
         doc.text(`${studentName}`, margin, 30);
         doc.setFontSize(10);
         doc.text(
-          `Datum: ${date} | Gesamtpunkte: ${totalPoints} | Zeit: ${formatTime(timeUsed)}`,
+          `Datum: ${formatDateDisplay(date)} | Gesamtpunkte: ${totalPoints} | Zeit: ${formatTime(timeUsed)}`,
           margin,
           45
         );
@@ -867,7 +887,7 @@ document.addEventListener("DOMContentLoaded", () => {
     exportSummaryPDF(
       summaryRows,
       `Klasse ${cls} | Jahrgang ${year}`,
-      `Datum: ${date}`,
+      `Datum: ${formatDateDisplay(date)}`,
       `Klasse_${cls}_Jahrgang_${year}_${date}_Übersicht.pdf`
     );
   }
