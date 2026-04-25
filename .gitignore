@@ -150,3 +150,5 @@ nohup.out
 start.sh
 
 .codex
+
+data.sqlite

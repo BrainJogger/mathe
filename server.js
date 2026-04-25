@@ -3,24 +3,102 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const bodyParser = require("body-parser");
+const BetterSqlite3 = require("better-sqlite3");
 
 const app = express();
 const PORT = 3001;
+const STORAGE_BACKEND = (process.env.STORAGE_BACKEND || "json").toLowerCase();
+const USE_SQLITE = STORAGE_BACKEND === "sqlite";
 
 const RESULTS_FILE = path.join(__dirname, "results.json");
 const STUDENTS_FILE = path.join(__dirname, "students.json");
 const CLASSES_FILE = path.join(__dirname, "classes.json");
 const TEACHERS_FILE = path.join(__dirname, "teachers.json");
+const SQLITE_DB_FILE = path.join(__dirname, "data.sqlite");
 
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/admin", express.static(path.join(__dirname, "admin")));
 
 // --- Hilfsfunktionen ---
+let sqliteDb = null;
+
+function toStoreKey(filePath) {
+  return path.basename(filePath);
+}
+
+function initSqlite() {
+  if (!USE_SQLITE) return;
+  sqliteDb = new BetterSqlite3(SQLITE_DB_FILE);
+  sqliteDb.pragma("journal_mode = WAL");
+  sqliteDb.exec(`
+    CREATE TABLE IF NOT EXISTS json_store (
+      store_key TEXT PRIMARY KEY,
+      payload TEXT NOT NULL
+    )
+  `);
+}
+
+function sqliteReadStore(key) {
+  const row = sqliteDb
+    .prepare("SELECT payload FROM json_store WHERE store_key = ?")
+    .get(key);
+  if (!row || typeof row.payload !== "string") return null;
+  try {
+    return JSON.parse(row.payload || "[]");
+  } catch (e) {
+    console.error("Fehler beim Parsen aus SQLite:", key, e);
+    return [];
+  }
+}
+
+function sqliteWriteStore(key, data) {
+  sqliteDb
+    .prepare(`
+      INSERT INTO json_store (store_key, payload)
+      VALUES (?, ?)
+      ON CONFLICT(store_key)
+      DO UPDATE SET payload = excluded.payload
+    `)
+    .run(key, JSON.stringify(data || []));
+}
+
+function bootstrapSqliteFromJson(filePath, initial = "[]") {
+  const key = toStoreKey(filePath);
+  const existing = sqliteReadStore(key);
+  if (existing !== null) return;
+
+  let data = [];
+  if (fs.existsSync(filePath)) {
+    try {
+      data = JSON.parse(fs.readFileSync(filePath, "utf8") || "[]");
+    } catch (e) {
+      console.error("Fehler beim Initialisieren aus JSON:", filePath, e);
+      data = [];
+    }
+  } else {
+    try {
+      data = JSON.parse(initial || "[]");
+    } catch (e) {
+      data = [];
+    }
+  }
+  sqliteWriteStore(key, data);
+}
+
 function ensureFile(filePath, initial = "[]") {
+  if (USE_SQLITE) {
+    bootstrapSqliteFromJson(filePath, initial);
+    return;
+  }
   if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, initial, "utf8");
 }
 function readJSON(filePath) {
+  if (USE_SQLITE) {
+    const key = toStoreKey(filePath);
+    const data = sqliteReadStore(key);
+    return data === null ? [] : data;
+  }
   try {
     const content = fs.readFileSync(filePath, "utf8");
     return JSON.parse(content || "[]");
@@ -30,6 +108,11 @@ function readJSON(filePath) {
   }
 }
 function writeJSON(filePath, data) {
+  if (USE_SQLITE) {
+    const key = toStoreKey(filePath);
+    sqliteWriteStore(key, data);
+    return;
+  }
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
 }
 function normalizeName(s) {
@@ -45,6 +128,7 @@ function toDateKey(d) {
 }
 
 // Sicherstellen, dass JSON-Dateien existieren
+initSqlite();
 ensureFile(RESULTS_FILE, "[]");
 ensureFile(STUDENTS_FILE, "[]");
 ensureFile(CLASSES_FILE, "[]");
@@ -477,4 +561,26 @@ app.get("/api/check-attempt/:studentId", (req, res) => {
   res.json({ alreadyDone });
 });
 
-app.listen(PORT, () => console.log(`Server läuft auf http://localhost:${PORT}`));
+function shutdown() {
+  if (sqliteDb) {
+    try {
+      sqliteDb.close();
+    } catch (e) {
+      console.error("Fehler beim Schließen der SQLite-DB:", e);
+    }
+  }
+}
+
+process.on("SIGINT", () => {
+  shutdown();
+  process.exit(0);
+});
+process.on("SIGTERM", () => {
+  shutdown();
+  process.exit(0);
+});
+
+app.listen(PORT, () => {
+  const backendLabel = USE_SQLITE ? `sqlite (${SQLITE_DB_FILE})` : "json";
+  console.log(`Server läuft auf http://localhost:${PORT} | storage=${backendLabel}`);
+});
