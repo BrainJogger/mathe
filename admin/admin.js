@@ -922,5 +922,11 @@ document.addEventListener("DOMContentLoaded", () => {
     renderResults();
   });
 
+  // Wenn die Seite aus dem Browser-Cache (bfcache) zurückkommt,
+  // müssen die Daten neu geladen werden (z. B. nach Schüler-Verschiebung).
+  window.addEventListener("pageshow", () => {
+    loadData();
+  });
+
   loadData();
 });
