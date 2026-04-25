@@ -192,10 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const dateContent = document.createElement("div");
             dateContent.style.display = "none";
-
-            Object.keys(grouped[cls][year][date]).sort().forEach(studentName => {
-              appendStudentEntries(dateContent, grouped[cls][year][date][studentName], studentName, date);
-            });
+            let dateContentLoaded = false;
 
             // PDF Export Datum
             dateDownloadBtn.addEventListener("click", e => {
@@ -238,6 +235,12 @@ document.addEventListener("DOMContentLoaded", () => {
             dateGroup.appendChild(dateContent);
             dateTitle.style.cursor = "pointer";
             dateTitle.addEventListener("click", () => {
+              if (!dateContentLoaded) {
+                Object.keys(grouped[cls][year][date]).sort().forEach(studentName => {
+                  appendStudentEntries(dateContent, grouped[cls][year][date][studentName], studentName, date);
+                });
+                dateContentLoaded = true;
+              }
               dateContent.style.display = dateContent.style.display === "none" ? "grid" : "none";
             });
 
@@ -268,12 +271,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const studentDatesContainer = document.createElement("div");
             studentDatesContainer.style.display = "none";
-
-            Object.keys(grouped[cls][year][studentName]).sort().forEach(date => {
-              appendStudentEntries(studentDatesContainer, grouped[cls][year][studentName][date], studentName, date);
-            });
+            let studentDatesLoaded = false;
 
             studentTitle.addEventListener("click", () => {
+              if (!studentDatesLoaded) {
+                Object.keys(grouped[cls][year][studentName]).sort().forEach(date => {
+                  appendStudentEntries(studentDatesContainer, grouped[cls][year][studentName][date], studentName, date);
+                });
+                studentDatesLoaded = true;
+              }
               studentDatesContainer.style.display = studentDatesContainer.style.display === "none" ? "grid" : "none";
             });
 
@@ -423,37 +429,39 @@ document.addEventListener("DOMContentLoaded", () => {
     answersContainer.style.display = "none";
     answersContainer.style.gridTemplateColumns = "repeat(10,1fr)";
     answersContainer.style.gap = "5px";
-
-    studentResults.forEach(result => {
-      Object.values(result.answers).forEach(ansObj => {
-        const li = document.createElement("div");
-        li.className = `answer-card ${ansObj.isCorrect ? "correct" : "incorrect"}`;
-        li.style.fontSize = "0.9em";
-
-        const questionDiv = document.createElement("div");
-        questionDiv.className = "question";
-        questionDiv.textContent = ansObj.question;
-
-        const givenDiv = document.createElement("div");
-        givenDiv.className = "given";
-        givenDiv.textContent = `Antwort: ${ansObj.given || "-"}`;
-
-        const correctDiv = document.createElement("div");
-        correctDiv.className = "correct-answer";
-        correctDiv.textContent = `Richtig: ${ansObj.correct}`;
-
-        li.appendChild(questionDiv);
-        li.appendChild(givenDiv);
-        li.appendChild(correctDiv);
-
-        answersContainer.appendChild(li);
-      });
-    });
+    let answersLoaded = false;
 
     studentGroup.appendChild(answersContainer);
 
     nameSpan.style.cursor = "pointer";
     nameSpan.addEventListener("click", () => {
+      if (!answersLoaded) {
+        studentResults.forEach(result => {
+          Object.values(result.answers || {}).forEach(ansObj => {
+            const li = document.createElement("div");
+            li.className = `answer-card ${ansObj.isCorrect ? "correct" : "incorrect"}`;
+            li.style.fontSize = "0.9em";
+
+            const questionDiv = document.createElement("div");
+            questionDiv.className = "question";
+            questionDiv.textContent = ansObj.question;
+
+            const givenDiv = document.createElement("div");
+            givenDiv.className = "given";
+            givenDiv.textContent = `Antwort: ${ansObj.given || "-"}`;
+
+            const correctDiv = document.createElement("div");
+            correctDiv.className = "correct-answer";
+            correctDiv.textContent = `Richtig: ${ansObj.correct}`;
+
+            li.appendChild(questionDiv);
+            li.appendChild(givenDiv);
+            li.appendChild(correctDiv);
+            answersContainer.appendChild(li);
+          });
+        });
+        answersLoaded = true;
+      }
       answersContainer.style.display = answersContainer.style.display === "none" ? "grid" : "none";
     });
 
