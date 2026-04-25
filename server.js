@@ -297,7 +297,31 @@ app.put("/api/students/:id", (req, res) => {
   if (jahrgang !== undefined) student.jahrgang = String(jahrgang);
 
   writeJSON(STUDENTS_FILE, students);
-  res.json({ message: "Schüler aktualisiert", student });
+
+  // Bereits vorhandene Ergebnisse dieses Schülers auf aktuelle Stammdaten synchronisieren,
+  // damit sie nach Klassen-/Jahrgangswechsel in der richtigen Gruppe angezeigt werden.
+  const classes = readJSON(CLASSES_FILE);
+  const classObj = classes.find(
+    c => c.name === student.klasse && (String(c.jahrgang) === String(student.jahrgang) || !c.jahrgang)
+  );
+  const lehrerOfStudent = classObj ? classObj.lehrer : "";
+
+  const results = readJSON(RESULTS_FILE);
+  let updatedResults = 0;
+  results.forEach(r => {
+    if (String(r.studentId) !== String(student.id)) return;
+    r.name = student.name;
+    r.klasse = student.klasse;
+    r.jahrgang = String(student.jahrgang);
+    r.lehrjahr = student.lehrjahr || String(student.jahrgang);
+    r.lehrer = lehrerOfStudent;
+    updatedResults++;
+  });
+  if (updatedResults > 0) {
+    writeJSON(RESULTS_FILE, results);
+  }
+
+  res.json({ message: "Schüler aktualisiert", student, updatedResults });
 });
 
 
