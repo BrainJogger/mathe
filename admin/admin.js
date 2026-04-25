@@ -129,6 +129,19 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         });
 
+        if (groupBy === "name") {
+          const yearDownloadBtn = document.createElement("button");
+          yearDownloadBtn.className = "btn export-btn";
+          yearDownloadBtn.textContent = "📄 Jahrgang PDF";
+          yearDownloadBtn.style.marginLeft = "10px";
+          yearTitle.appendChild(yearDownloadBtn);
+
+          yearDownloadBtn.addEventListener("click", e => {
+            e.stopPropagation();
+            exportYearPDF(grouped[cls][year], cls, year);
+          });
+        }
+
         yearGroup.appendChild(yearTitle);
 
         const yearContent = document.createElement("div");
@@ -226,8 +239,21 @@ document.addEventListener("DOMContentLoaded", () => {
             studentGroupContainer.className = "student-name-group";
 
             const studentTitle = document.createElement("h5");
-            studentTitle.textContent = studentName;
+            studentTitle.style.display = "flex";
+            studentTitle.style.justifyContent = "space-between";
+            studentTitle.style.alignItems = "center";
+            studentTitle.style.gap = "8px";
             studentTitle.style.cursor = "pointer";
+
+            const studentTitleText = document.createElement("span");
+            studentTitleText.textContent = studentName;
+
+            const studentDownloadBtn = document.createElement("button");
+            studentDownloadBtn.className = "btn export-btn";
+            studentDownloadBtn.textContent = "📄 Kind PDF";
+
+            studentTitle.appendChild(studentTitleText);
+            studentTitle.appendChild(studentDownloadBtn);
             studentGroupContainer.appendChild(studentTitle);
 
             const studentDatesContainer = document.createElement("div");
@@ -239,6 +265,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             studentTitle.addEventListener("click", () => {
               studentDatesContainer.style.display = studentDatesContainer.style.display === "none" ? "grid" : "none";
+            });
+
+            studentDownloadBtn.addEventListener("click", e => {
+              e.stopPropagation();
+              exportStudentAllResultsPDF(grouped[cls][year][studentName], studentName, year);
             });
 
             studentGroupContainer.appendChild(studentDatesContainer);
@@ -450,6 +481,229 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/×/g, "x");   // optional falls du auch × nutzt
   }
 
+  function collectSummaryRows(studentResults, studentName) {
+    const maxTime = 600;
+    const rows = [];
+
+    (studentResults || []).forEach(result => {
+      const answers = Object.values(result.answers || {});
+      const totalQuestions = answers.length;
+      const totalPoints = answers.filter(a => a.isCorrect).length;
+      const timeUsed = (typeof result.timeLeft === "number")
+        ? (maxTime - result.timeLeft)
+        : 0;
+
+      rows.push({
+        studentName,
+        submittedAt: result.submittedAt || "",
+        modeLabel: getModeLabel(result.mode),
+        pointsText: `${totalPoints} / ${totalQuestions}`,
+        durationText: formatDuration(timeUsed)
+      });
+    });
+
+    return rows;
+  }
+
+  function flattenStudentResultsByDate(studentDateMap) {
+    const flattened = [];
+    Object.keys(studentDateMap || {}).sort().forEach(date => {
+      const dateResults = Array.isArray(studentDateMap[date]) ? studentDateMap[date] : [studentDateMap[date]];
+      flattened.push(...dateResults);
+    });
+    return flattened;
+  }
+
+  function exportSummaryPDF(rows, title, subtitle, filename) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'pt', 'a4');
+    const pageWidth = doc.internal.pageSize.width;
+    const margin = 20;
+    const rowHeight = 28;
+
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text(title, margin, 30);
+
+    doc.setFontSize(16);
+    doc.text(subtitle, margin, 55);
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    let y = 85;
+    doc.text("Schüler", margin, y);
+    doc.text("Datum", margin + 175, y);
+    doc.text("Typ", margin + 255, y);
+    doc.text("Punkte", pageWidth - margin - 120, y);
+    doc.text("Dauer", pageWidth - margin - 50, y);
+    y += rowHeight;
+
+    doc.setFont("helvetica", "normal");
+
+    if (!rows.length) {
+      doc.text("Keine Ergebnisse vorhanden.", margin, y);
+      doc.save(filename);
+      return;
+    }
+
+    let previousStudentName = "";
+    rows
+      .slice()
+      .sort((a, b) => {
+        const nameDiff = (a.studentName || "").localeCompare(b.studentName || "", "de", { sensitivity: "base" });
+        if (nameDiff !== 0) return nameDiff;
+        return new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0);
+      })
+      .forEach((row, index) => {
+        if (index > 0 && row.studentName !== previousStudentName) {
+          if (y > doc.internal.pageSize.height - margin - 10) {
+            doc.addPage();
+            y = margin + 20;
+            doc.setFont("helvetica", "bold");
+            doc.text("Schüler", margin, y);
+            doc.text("Datum", margin + 175, y);
+            doc.text("Typ", margin + 255, y);
+            doc.text("Punkte", pageWidth - margin - 120, y);
+            doc.text("Dauer", pageWidth - margin - 50, y);
+            y += rowHeight;
+            doc.setFont("helvetica", "normal");
+          } else {
+            doc.setDrawColor(170);
+            doc.line(margin, y - 12, pageWidth - margin, y - 12);
+          }
+        }
+
+        const submitted = new Date(row.submittedAt);
+        const dateLabel = Number.isNaN(submitted.getTime())
+          ? "-"
+          : submitted.toLocaleDateString("de-DE");
+
+        doc.text(row.studentName, margin, y, { maxWidth: 160 });
+        doc.text(dateLabel, margin + 175, y);
+        doc.text(row.modeLabel, margin + 255, y, { maxWidth: 80 });
+        doc.text(row.pointsText, pageWidth - margin - 120, y);
+        doc.text(row.durationText, pageWidth - margin - 50, y);
+        y += rowHeight;
+        previousStudentName = row.studentName;
+
+        if (y > doc.internal.pageSize.height - margin) {
+          doc.addPage();
+          y = margin + 20;
+          doc.setFont("helvetica", "bold");
+          doc.text("Schüler", margin, y);
+          doc.text("Datum", margin + 175, y);
+          doc.text("Typ", margin + 255, y);
+          doc.text("Punkte", pageWidth - margin - 120, y);
+          doc.text("Dauer", pageWidth - margin - 50, y);
+          y += rowHeight;
+          doc.setFont("helvetica", "normal");
+        }
+      });
+
+    doc.save(filename);
+  }
+
+  function exportYearSummaryPDF(yearStudentData, cls, year) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'pt', 'a4');
+    const pageWidth = doc.internal.pageSize.width;
+    const margin = 20;
+    const rowHeight = 28;
+    const studentNames = Object.keys(yearStudentData || {})
+      .sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }));
+
+    let isFirstStudentPage = true;
+
+    studentNames.forEach(studentName => {
+      const studentResults = flattenStudentResultsByDate(yearStudentData[studentName]);
+      const rows = collectSummaryRows(studentResults, studentName)
+        .sort((a, b) => new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0));
+
+      if (!isFirstStudentPage) {
+        doc.addPage();
+      }
+      isFirstStudentPage = false;
+
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Klasse ${cls} | Jahrgang ${year}`, margin, 30);
+
+      doc.setFontSize(16);
+      doc.text(`Kind: ${studentName}`, margin, 55);
+
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      let y = 85;
+      doc.text("Schüler", margin, y);
+      doc.text("Datum", margin + 175, y);
+      doc.text("Typ", margin + 255, y);
+      doc.text("Punkte", pageWidth - margin - 120, y);
+      doc.text("Dauer", pageWidth - margin - 50, y);
+      y += rowHeight;
+      doc.setFont("helvetica", "normal");
+
+      if (!rows.length) {
+        doc.text("Keine Ergebnisse vorhanden.", margin, y);
+        return;
+      }
+
+      rows.forEach(row => {
+        const submitted = new Date(row.submittedAt);
+        const dateLabel = Number.isNaN(submitted.getTime())
+          ? "-"
+          : submitted.toLocaleDateString("de-DE");
+
+        doc.text(row.studentName, margin, y, { maxWidth: 160 });
+        doc.text(dateLabel, margin + 175, y);
+        doc.text(row.modeLabel, margin + 255, y, { maxWidth: 80 });
+        doc.text(row.pointsText, pageWidth - margin - 120, y);
+        doc.text(row.durationText, pageWidth - margin - 50, y);
+        y += rowHeight;
+
+        if (y > doc.internal.pageSize.height - margin) {
+          doc.addPage();
+          y = margin + 20;
+          doc.setFont("helvetica", "bold");
+          doc.text("Schüler", margin, y);
+          doc.text("Datum", margin + 175, y);
+          doc.text("Typ", margin + 255, y);
+          doc.text("Punkte", pageWidth - margin - 120, y);
+          doc.text("Dauer", pageWidth - margin - 50, y);
+          y += rowHeight;
+          doc.setFont("helvetica", "normal");
+        }
+      });
+    });
+
+    if (!studentNames.length) {
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Klasse ${cls} | Jahrgang ${year}`, margin, 30);
+      doc.setFontSize(16);
+      doc.text("Alle Kinder, alle Ergebnisse", margin, 55);
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "normal");
+      doc.text("Keine Ergebnisse vorhanden.", margin, 85);
+    }
+
+    doc.save(`Klasse_${cls}_Jahrgang_${year}_Name_Gesamt.pdf`);
+  }
+
+  function exportYearPDF(yearStudentData, cls, year) {
+    exportYearSummaryPDF(yearStudentData, cls, year);
+  }
+
+  function exportStudentAllResultsPDF(studentDateMap, studentName, year) {
+    const studentResults = flattenStudentResultsByDate(studentDateMap);
+    const summaryRows = collectSummaryRows(studentResults, studentName);
+    exportSummaryPDF(
+      summaryRows,
+      `Kind: ${studentName}`,
+      `Jahrgang ${year} | Alle Ergebnisse`,
+      `${studentName}_Jahrgang_${year}_Alle_Ergebnisse.pdf`
+    );
+  }
+
   // Einzel-Download (wie bisher)
   function exportStudentPDF(studentResults, studentName, date) {
     const { jsPDF } = window.jspdf;
@@ -599,90 +853,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Download Übersicht: eine Seite, nur Gesamtpunkte
   function exportDateSummaryPDF(dateGroupData, cls, year, date) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'pt', 'a4');
-    const pageWidth = doc.internal.pageSize.width;
-    const margin = 20;
-    const rowHeight = 28;
-    const maxTime = 600;
-
-    // Klasse & Jahrgang
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.text(`Klasse ${cls} | Jahrgang ${year}`, margin, 30);
-
-    // Datum
-    doc.setFontSize(16);
-    doc.text(`Datum: ${date}`, margin, 55);
-
-    // Tabellenüberschriften
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    let y = 85;
-    doc.text("Schüler", margin, y);
-    doc.text("Zeitpunkt", margin + 175, y);
-    doc.text("Typ", margin + 255, y);
-    doc.text("Punkte", pageWidth - margin - 120, y);
-    doc.text("Dauer", pageWidth - margin - 50, y);
-    y += rowHeight;
-
     const students = Object.keys(dateGroupData).sort();
     const summaryRows = [];
 
-    doc.setFont("helvetica", "normal");
     students.forEach(studentName => {
       const studentResults = Array.isArray(dateGroupData[studentName])
         ? dateGroupData[studentName]
         : Object.values(dateGroupData[studentName]).flat();
 
-      studentResults.forEach(result => {
-        const answers = Object.values(result.answers || {});
-        const totalQuestions = answers.length;
-        const totalPoints = answers.filter(a => a.isCorrect).length;
-        const timeUsed = (typeof result.timeLeft === "number")
-          ? (maxTime - result.timeLeft)
-          : 0;
-
-        summaryRows.push({
-          studentName,
-          submittedAt: result.submittedAt || "",
-          modeLabel: getModeLabel(result.mode),
-          pointsText: `${totalPoints} / ${totalQuestions}`,
-          durationText: formatDuration(timeUsed)
-        });
-      });
+      summaryRows.push(...collectSummaryRows(studentResults, studentName));
     });
 
-    summaryRows
-      .sort((a, b) => new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0))
-      .forEach(row => {
-        const submitted = new Date(row.submittedAt);
-        const timestamp = Number.isNaN(submitted.getTime())
-          ? "-"
-          : submitted.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
-
-        doc.text(row.studentName, margin, y, { maxWidth: 160 });
-        doc.text(timestamp, margin + 175, y);
-        doc.text(row.modeLabel, margin + 255, y, { maxWidth: 80 });
-        doc.text(row.pointsText, pageWidth - margin - 120, y);
-        doc.text(row.durationText, pageWidth - margin - 50, y);
-        y += rowHeight;
-
-        if (y > doc.internal.pageSize.height - margin) {
-          doc.addPage();
-          y = margin + 20;
-          doc.setFont("helvetica", "bold");
-          doc.text("Schüler", margin, y);
-          doc.text("Zeitpunkt", margin + 175, y);
-          doc.text("Typ", margin + 255, y);
-          doc.text("Punkte", pageWidth - margin - 120, y);
-          doc.text("Dauer", pageWidth - margin - 50, y);
-          y += rowHeight;
-          doc.setFont("helvetica", "normal");
-        }
-      });
-
-    doc.save(`Klasse_${cls}_Jahrgang_${year}_${date}_Übersicht.pdf`);
+    exportSummaryPDF(
+      summaryRows,
+      `Klasse ${cls} | Jahrgang ${year}`,
+      `Datum: ${date}`,
+      `Klasse_${cls}_Jahrgang_${year}_${date}_Übersicht.pdf`
+    );
   }
 
   function formatDuration(seconds) {
