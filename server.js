@@ -37,6 +37,26 @@ function initSqlite() {
       payload TEXT NOT NULL
     )
   `);
+  sqliteDb.exec(`
+    CREATE TABLE IF NOT EXISTS results (
+      id TEXT PRIMARY KEY,
+      student_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      klasse TEXT NOT NULL,
+      jahrgang TEXT NOT NULL,
+      lehrjahr TEXT,
+      lehrer TEXT,
+      mode TEXT,
+      answers_json TEXT,
+      corrections_json TEXT,
+      time_left INTEGER,
+      submitted_at TEXT NOT NULL
+    )
+  `);
+  sqliteDb.exec("CREATE INDEX IF NOT EXISTS idx_results_student_id ON results(student_id)");
+  sqliteDb.exec("CREATE INDEX IF NOT EXISTS idx_results_class_year ON results(klasse, jahrgang)");
+  sqliteDb.exec("CREATE INDEX IF NOT EXISTS idx_results_lehrer ON results(lehrer)");
+  sqliteDb.exec("CREATE INDEX IF NOT EXISTS idx_results_submitted_at ON results(submitted_at)");
 }
 
 function sqliteReadStore(key) {
@@ -61,6 +81,164 @@ function sqliteWriteStore(key, data) {
       DO UPDATE SET payload = excluded.payload
     `)
     .run(key, JSON.stringify(data || []));
+}
+
+function parseJsonSafe(value, fallback = {}) {
+  if (value === null || value === undefined || value === "") return fallback;
+  if (typeof value === "object") return value;
+  try {
+    return JSON.parse(value);
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function mapResultRow(row) {
+  return {
+    id: Number.isNaN(Number(row.id)) ? row.id : Number(row.id),
+    studentId: row.student_id,
+    name: row.name,
+    klasse: row.klasse,
+    jahrgang: row.jahrgang,
+    lehrjahr: row.lehrjahr,
+    lehrer: row.lehrer,
+    mode: row.mode,
+    answers: parseJsonSafe(row.answers_json, {}),
+    corrections: parseJsonSafe(row.corrections_json, {}),
+    timeLeft: row.time_left,
+    submittedAt: row.submitted_at,
+  };
+}
+
+function insertResultSqlite(entry) {
+  sqliteDb.prepare(`
+    INSERT INTO results (
+      id, student_id, name, klasse, jahrgang, lehrjahr, lehrer, mode, answers_json, corrections_json, time_left, submitted_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    String(entry.id),
+    String(entry.studentId),
+    entry.name || "",
+    entry.klasse || "",
+    String(entry.jahrgang || ""),
+    entry.lehrjahr || "",
+    entry.lehrer || "",
+    entry.mode || "",
+    JSON.stringify(entry.answers || {}),
+    JSON.stringify(entry.corrections || {}),
+    typeof entry.timeLeft === "number" ? entry.timeLeft : null,
+    entry.submittedAt || new Date().toISOString()
+  );
+}
+
+function bootstrapResultsTableFromJson() {
+  if (!USE_SQLITE) return;
+  const countRow = sqliteDb.prepare("SELECT COUNT(*) AS count FROM results").get();
+  if ((countRow?.count || 0) > 0) return;
+
+  let sourceResults = [];
+  if (fs.existsSync(RESULTS_FILE)) {
+    try {
+      sourceResults = JSON.parse(fs.readFileSync(RESULTS_FILE, "utf8") || "[]");
+    } catch (e) {
+      sourceResults = [];
+    }
+  }
+  if (!Array.isArray(sourceResults) || sourceResults.length === 0) {
+    const fromStore = sqliteReadStore(toStoreKey(RESULTS_FILE));
+    if (Array.isArray(fromStore)) sourceResults = fromStore;
+  }
+  if (!Array.isArray(sourceResults) || sourceResults.length === 0) return;
+
+  const tx = sqliteDb.transaction((items) => {
+    for (const item of items) {
+      if (!item || item.id === undefined || !item.studentId) continue;
+      insertResultSqlite(item);
+    }
+  });
+  tx(sourceResults);
+}
+
+function getResultsSqlite(filters = {}) {
+  const conditions = [];
+  const params = [];
+
+  if (filters.lehrer) {
+    conditions.push("LOWER(COALESCE(lehrer, '')) = LOWER(?)");
+    params.push(String(filters.lehrer));
+  }
+  if (filters.klasse) {
+    conditions.push("klasse = ?");
+    params.push(String(filters.klasse));
+  }
+  if (filters.jahrgang) {
+    conditions.push("jahrgang = ?");
+    params.push(String(filters.jahrgang));
+  }
+  if (filters.studentId) {
+    conditions.push("student_id = ?");
+    params.push(String(filters.studentId));
+  }
+  if (filters.nameLike) {
+    conditions.push("LOWER(name) LIKE LOWER(?)");
+    params.push(`%${String(filters.nameLike)}%`);
+  }
+  if (filters.date) {
+    conditions.push("submitted_at LIKE ?");
+    params.push(`${String(filters.date)}%`);
+  }
+
+  let sql = "SELECT * FROM results";
+  if (conditions.length) sql += ` WHERE ${conditions.join(" AND ")}`;
+  sql += " ORDER BY submitted_at DESC";
+
+  if (Number.isInteger(filters.limit) && filters.limit > 0) {
+    sql += " LIMIT ?";
+    params.push(filters.limit);
+    if (Number.isInteger(filters.offset) && filters.offset >= 0) {
+      sql += " OFFSET ?";
+      params.push(filters.offset);
+    }
+  }
+
+  const rows = sqliteDb.prepare(sql).all(...params);
+  return rows.map(mapResultRow);
+}
+
+function countResultsSqlite(filters = {}) {
+  const conditions = [];
+  const params = [];
+
+  if (filters.lehrer) {
+    conditions.push("LOWER(COALESCE(lehrer, '')) = LOWER(?)");
+    params.push(String(filters.lehrer));
+  }
+  if (filters.klasse) {
+    conditions.push("klasse = ?");
+    params.push(String(filters.klasse));
+  }
+  if (filters.jahrgang) {
+    conditions.push("jahrgang = ?");
+    params.push(String(filters.jahrgang));
+  }
+  if (filters.studentId) {
+    conditions.push("student_id = ?");
+    params.push(String(filters.studentId));
+  }
+  if (filters.nameLike) {
+    conditions.push("LOWER(name) LIKE LOWER(?)");
+    params.push(`%${String(filters.nameLike)}%`);
+  }
+  if (filters.date) {
+    conditions.push("submitted_at LIKE ?");
+    params.push(`${String(filters.date)}%`);
+  }
+
+  let sql = "SELECT COUNT(*) AS count FROM results";
+  if (conditions.length) sql += ` WHERE ${conditions.join(" AND ")}`;
+  const row = sqliteDb.prepare(sql).get(...params);
+  return row?.count || 0;
 }
 
 function bootstrapSqliteFromJson(filePath, initial = "[]") {
@@ -133,6 +311,7 @@ ensureFile(RESULTS_FILE, "[]");
 ensureFile(STUDENTS_FILE, "[]");
 ensureFile(CLASSES_FILE, "[]");
 ensureFile(TEACHERS_FILE, "[]");
+bootstrapResultsTableFromJson();
 
 // --- Aufgaben generieren ---
 function shuffle(arr) {
@@ -390,19 +569,40 @@ app.put("/api/students/:id", (req, res) => {
   );
   const lehrerOfStudent = classObj ? classObj.lehrer : "";
 
-  const results = readJSON(RESULTS_FILE);
   let updatedResults = 0;
-  results.forEach(r => {
-    if (String(r.studentId) !== String(student.id)) return;
-    r.name = student.name;
-    r.klasse = student.klasse;
-    r.jahrgang = String(student.jahrgang);
-    r.lehrjahr = student.lehrjahr || String(student.jahrgang);
-    r.lehrer = lehrerOfStudent;
-    updatedResults++;
-  });
-  if (updatedResults > 0) {
-    writeJSON(RESULTS_FILE, results);
+  if (USE_SQLITE) {
+    const info = sqliteDb.prepare(`
+      UPDATE results
+      SET
+        name = ?,
+        klasse = ?,
+        jahrgang = ?,
+        lehrjahr = ?,
+        lehrer = ?
+      WHERE student_id = ?
+    `).run(
+      student.name,
+      student.klasse,
+      String(student.jahrgang),
+      student.lehrjahr || String(student.jahrgang),
+      lehrerOfStudent,
+      String(student.id)
+    );
+    updatedResults = info?.changes || 0;
+  } else {
+    const results = readJSON(RESULTS_FILE);
+    results.forEach(r => {
+      if (String(r.studentId) !== String(student.id)) return;
+      r.name = student.name;
+      r.klasse = student.klasse;
+      r.jahrgang = String(student.jahrgang);
+      r.lehrjahr = student.lehrjahr || String(student.jahrgang);
+      r.lehrer = lehrerOfStudent;
+      updatedResults++;
+    });
+    if (updatedResults > 0) {
+      writeJSON(RESULTS_FILE, results);
+    }
   }
 
   res.json({ message: "Schüler aktualisiert", student, updatedResults });
@@ -441,13 +641,24 @@ app.post("/submit", (req, res) => {
   const student = students.find(s => s.id === studentId);
   if (!student) return res.status(400).json({ error: "Ungültiger Schüler (studentId)" });
 
-  const results = readJSON(RESULTS_FILE);
   const todayKey = toDateKey(new Date());
-  const alreadyDone = results.some(r =>
-    r.studentId === studentId &&
-    r.submittedAt &&
-    toDateKey(r.submittedAt) === todayKey
-  );
+  let alreadyDone = false;
+  if (USE_SQLITE) {
+    const row = sqliteDb.prepare(`
+      SELECT 1
+      FROM results
+      WHERE student_id = ? AND submitted_at LIKE ?
+      LIMIT 1
+    `).get(String(studentId), `${todayKey}%`);
+    alreadyDone = Boolean(row);
+  } else {
+    const results = readJSON(RESULTS_FILE);
+    alreadyDone = results.some(r =>
+      r.studentId === studentId &&
+      r.submittedAt &&
+      toDateKey(r.submittedAt) === todayKey
+    );
+  }
   if (alreadyDone) {
     //return res.status(409).json({ error: "Für heute wurde bereits eine Prüfung abgelegt" });
   }
@@ -493,8 +704,13 @@ app.post("/submit", (req, res) => {
   };
 
   tasksByStudent.delete(cacheKey);
-  results.push(entry);
-  writeJSON(RESULTS_FILE, results);
+  if (USE_SQLITE) {
+    insertResultSqlite(entry);
+  } else {
+    const results = readJSON(RESULTS_FILE);
+    results.push(entry);
+    writeJSON(RESULTS_FILE, results);
+  }
 
   res.json({ message: "Ergebnisse gespeichert", corrections });
 });
@@ -503,17 +719,83 @@ app.post("/submit", (req, res) => {
 app.get("/results", (req, res) => {
   // akzeptiert ?lehrer=Name oder header x-teacher
   const lehrerParam = req.query.lehrer || req.headers["x-teacher"];
-  const results = readJSON(RESULTS_FILE);
+  const klasse = req.query.klasse;
+  const jahrgang = req.query.jahrgang;
+  const date = req.query.date;
+  const search = req.query.search;
+  const studentId = req.query.studentId;
+  const limitRaw = req.query.limit;
+  const offsetRaw = req.query.offset;
+  const includeMeta = String(req.query.meta || "") === "1";
 
-  if (!lehrerParam) return res.json(results);
+  const parsedLimit = limitRaw !== undefined ? Number.parseInt(String(limitRaw), 10) : null;
+  const parsedOffset = offsetRaw !== undefined ? Number.parseInt(String(offsetRaw), 10) : 0;
+  const limit = Number.isInteger(parsedLimit) && parsedLimit > 0 ? parsedLimit : null;
+  const offset = Number.isInteger(parsedOffset) && parsedOffset >= 0 ? parsedOffset : 0;
 
-  const wanted = normalizeName(lehrerParam);
-  const filtered = results.filter(r => normalizeName(r.lehrer) === wanted);
-  res.json(filtered);
+  if (USE_SQLITE) {
+    const filters = {
+      lehrer: lehrerParam || null,
+      klasse: klasse || null,
+      jahrgang: jahrgang || null,
+      date: date || null,
+      nameLike: search || null,
+      studentId: studentId || null,
+      limit,
+      offset,
+    };
+    const rows = getResultsSqlite(filters);
+    if (includeMeta) {
+      const total = countResultsSqlite({ ...filters, limit: null, offset: null });
+      return res.json({ data: rows, total, limit: limit || null, offset });
+    }
+    return res.json(rows);
+  }
+
+  let results = readJSON(RESULTS_FILE);
+  if (lehrerParam) {
+    const wanted = normalizeName(lehrerParam);
+    results = results.filter(r => normalizeName(r.lehrer) === wanted);
+  }
+  if (klasse) {
+    results = results.filter(r => r.klasse === klasse);
+  }
+  if (jahrgang) {
+    results = results.filter(r => String(r.jahrgang) === String(jahrgang));
+  }
+  if (date) {
+    results = results.filter(r => (r.submittedAt || "").startsWith(String(date)));
+  }
+  if (search) {
+    const term = normalizeName(search);
+    results = results.filter(r => normalizeName(r.name).includes(term));
+  }
+  if (studentId) {
+    results = results.filter(r => String(r.studentId) === String(studentId));
+  }
+  results.sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
+
+  if (limit) {
+    const paged = results.slice(offset, offset + limit);
+    if (includeMeta) {
+      return res.json({ data: paged, total: results.length, limit, offset });
+    }
+    return res.json(paged);
+  }
+
+  if (includeMeta) {
+    return res.json({ data: results, total: results.length, limit: null, offset: 0 });
+  }
+  return res.json(results);
 });
 
 app.delete("/results/:id", (req, res) => {
   const id = req.params.id;
+  if (USE_SQLITE) {
+    const info = sqliteDb.prepare("DELETE FROM results WHERE id = ?").run(String(id));
+    if ((info?.changes || 0) === 0) return res.status(404).json({ message: "Eintrag nicht gefunden" });
+    return res.json({ message: "Eintrag gelöscht" });
+  }
   let results = readJSON(RESULTS_FILE);
   const initial = results.length;
   results = results.filter(r => String(r.id) !== String(id));
@@ -524,6 +806,10 @@ app.delete("/results/:id", (req, res) => {
 
 app.delete("/results/date/:date", (req, res) => {
   const dateStr = req.params.date;
+  if (USE_SQLITE) {
+    sqliteDb.prepare("DELETE FROM results WHERE submitted_at LIKE ?").run(`${dateStr}%`);
+    return res.json({ message: `Alle Einträge vom ${dateStr} gelöscht` });
+  }
   let results = readJSON(RESULTS_FILE);
   const filtered = results.filter(r => !(r.submittedAt || "").startsWith(dateStr));
   writeJSON(RESULTS_FILE, filtered);
@@ -531,6 +817,10 @@ app.delete("/results/date/:date", (req, res) => {
 });
 
 app.delete("/results", (req, res) => {
+  if (USE_SQLITE) {
+    sqliteDb.prepare("DELETE FROM results").run();
+    return res.json({ message: "Alle Einträge gelöscht" });
+  }
   writeJSON(RESULTS_FILE, []);
   res.json({ message: "Alle Einträge gelöscht" });
 });
@@ -550,13 +840,24 @@ app.get("/api/check-attempt/:studentId", (req, res) => {
   const { studentId } = req.params;
   if (!studentId) return res.status(400).json({ error: "studentId erforderlich" });
 
-  const results = readJSON(RESULTS_FILE);
   const todayKey = toDateKey(new Date()); // nur Datum, ohne Uhrzeit (lokal)
-  const alreadyDone = results.some(r =>
-    r.studentId === studentId &&
-    r.submittedAt &&
-    toDateKey(r.submittedAt) === todayKey
-  );
+  let alreadyDone = false;
+  if (USE_SQLITE) {
+    const row = sqliteDb.prepare(`
+      SELECT 1
+      FROM results
+      WHERE student_id = ? AND submitted_at LIKE ?
+      LIMIT 1
+    `).get(String(studentId), `${todayKey}%`);
+    alreadyDone = Boolean(row);
+  } else {
+    const results = readJSON(RESULTS_FILE);
+    alreadyDone = results.some(r =>
+      r.studentId === studentId &&
+      r.submittedAt &&
+      toDateKey(r.submittedAt) === todayKey
+    );
+  }
 
   res.json({ alreadyDone });
 });

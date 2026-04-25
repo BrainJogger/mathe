@@ -9,11 +9,21 @@ document.addEventListener("DOMContentLoaded", () => {
   let results = [];
   let classes = [];
 
+  function buildResultsQuery() {
+    const params = new URLSearchParams();
+    if (searchInput.value) params.set("search", searchInput.value.trim());
+    if (classFilter.value) params.set("klasse", classFilter.value);
+    if (dateFilter.value) params.set("date", dateFilter.value);
+    return params.toString();
+  }
+
   async function loadData() {
     try {
+      const query = buildResultsQuery();
+      const resultsUrl = query ? `/results?${query}` : "/results";
       const [clsRes, resultsRes] = await Promise.all([
         fetch("/api/classes"),
-        fetch("/results")
+        fetch(resultsUrl)
       ]);
       classes = clsRes.ok ? await clsRes.json() : [];
       results = resultsRes.ok ? await resultsRes.json() : [];
@@ -910,16 +920,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  searchInput.addEventListener("input", renderResults);
-  classFilter.addEventListener("change", renderResults);
-  dateFilter.addEventListener("change", renderResults);
+  searchInput.addEventListener("input", loadData);
+  classFilter.addEventListener("change", loadData);
+  dateFilter.addEventListener("change", loadData);
   groupingSelect.addEventListener("change", renderResults);
   clearFilter.addEventListener("click", () => {
     searchInput.value = "";
     classFilter.value = "";
     dateFilter.value = "";
     groupingSelect.value = "date";
-    renderResults();
+    loadData();
   });
 
   // Wenn die Seite aus dem Browser-Cache (bfcache) zurückkommt,
