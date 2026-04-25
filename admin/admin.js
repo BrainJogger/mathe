@@ -5,9 +5,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const dateFilter = document.getElementById("dateFilter");
   const groupingSelect = document.getElementById("groupingSelect");
   const clearFilter = document.getElementById("clearFilter");
+  const loadMoreResultsBtn = document.getElementById("loadMoreResults");
+  const resultsCountInfo = document.getElementById("resultsCountInfo");
 
   let results = [];
   let classes = [];
+  let classesLoaded = false;
+  let totalResults = 0;
+  let offset = 0;
+  const pageSize = 250;
+  let searchDebounceTimer = null;
 
   function buildResultsQuery() {
     const params = new URLSearchParams();
@@ -17,17 +24,54 @@ document.addEventListener("DOMContentLoaded", () => {
     return params.toString();
   }
 
-  async function loadData() {
+  async function loadClassesOnce() {
+    if (classesLoaded) return;
     try {
-      const query = buildResultsQuery();
-      const resultsUrl = query ? `/results?${query}` : "/results";
-      const [clsRes, resultsRes] = await Promise.all([
-        fetch("/api/classes"),
-        fetch(resultsUrl)
-      ]);
+      const clsRes = await fetch("/api/classes");
       classes = clsRes.ok ? await clsRes.json() : [];
-      results = resultsRes.ok ? await resultsRes.json() : [];
+      classesLoaded = true;
       populateClassFilter(classes);
+    } catch (err) {
+      console.error("Fehler beim Laden der Klassen:", err);
+    }
+  }
+
+  function updateResultsMeta() {
+    const loaded = results.length;
+    const totalLabel = Number.isFinite(totalResults) ? totalResults : loaded;
+    if (resultsCountInfo) {
+      resultsCountInfo.textContent = `Ergebnisse geladen: ${loaded} / ${totalLabel}`;
+    }
+    if (loadMoreResultsBtn) {
+      loadMoreResultsBtn.style.display = loaded < totalLabel ? "inline-block" : "none";
+    }
+  }
+
+  async function loadData({ append = false } = {}) {
+    try {
+      await loadClassesOnce();
+
+      if (!append) {
+        offset = 0;
+        results = [];
+      }
+
+      const query = buildResultsQuery();
+      const sep = query ? "&" : "";
+      const resultsUrl = `/results?${query}${sep}limit=${pageSize}&offset=${offset}&meta=1`;
+      const resultsRes = await fetch(resultsUrl);
+      const payload = resultsRes.ok ? await resultsRes.json() : { data: [], total: 0 };
+      const data = Array.isArray(payload) ? payload : (payload.data || []);
+      const total = Array.isArray(payload) ? data.length : Number(payload.total || 0);
+
+      if (append) {
+        results = results.concat(data);
+      } else {
+        results = data;
+      }
+      offset = results.length;
+      totalResults = total;
+      updateResultsMeta();
       renderResults();
     } catch (err) {
       console.error("Fehler beim Laden:", err);
@@ -36,6 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function populateClassFilter(list) {
+    const previousValue = classFilter.value;
     const classNames = [...new Set(list.map(r => r.name))];
     classFilter.innerHTML = '<option value="">Alle Klassen</option>';
     classNames.sort().forEach(cls => {
@@ -44,23 +89,15 @@ document.addEventListener("DOMContentLoaded", () => {
       option.textContent = cls;
       classFilter.appendChild(option);
     });
+    if (previousValue && classNames.includes(previousValue)) {
+      classFilter.value = previousValue;
+    }
   }
 
   function renderResults() {
     resultsContainer.innerHTML = "";
 
     let filteredResults = [...results];
-    if (searchInput.value) {
-      filteredResults = filteredResults.filter(r =>
-        r.name.toLowerCase().includes(searchInput.value.toLowerCase())
-      );
-    }
-    if (classFilter.value) {
-      filteredResults = filteredResults.filter(r => r.klasse === classFilter.value);
-    }
-    if (dateFilter.value) {
-      filteredResults = filteredResults.filter(r => r.submittedAt.startsWith(dateFilter.value));
-    }
 
     const groupBy = groupingSelect.value;
 
@@ -928,7 +965,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  searchInput.addEventListener("input", loadData);
+  searchInput.addEventListener("input", () => {
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+      loadData();
+    }, 250);
+  });
   classFilter.addEventListener("change", loadData);
   dateFilter.addEventListener("change", loadData);
   groupingSelect.addEventListener("change", renderResults);
@@ -939,10 +981,14 @@ document.addEventListener("DOMContentLoaded", () => {
     groupingSelect.value = "date";
     loadData();
   });
+  loadMoreResultsBtn?.addEventListener("click", () => {
+    loadData({ append: true });
+  });
 
   // Wenn die Seite aus dem Browser-Cache (bfcache) zurückkommt,
   // müssen die Daten neu geladen werden (z. B. nach Schüler-Verschiebung).
   window.addEventListener("pageshow", () => {
+    classesLoaded = false;
     loadData();
   });
 
