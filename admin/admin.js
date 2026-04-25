@@ -5,9 +5,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const dateFilter = document.getElementById("dateFilter");
   const groupingSelect = document.getElementById("groupingSelect");
   const clearFilter = document.getElementById("clearFilter");
+  const resultsLoading = document.getElementById("resultsLoading");
 
   let results = [];
   let classes = [];
+  let activeLoadId = 0;
 
   function buildResultsQuery() {
     const params = new URLSearchParams();
@@ -17,7 +19,20 @@ document.addEventListener("DOMContentLoaded", () => {
     return params.toString();
   }
 
+  function setLoading(isLoading) {
+    if (!resultsLoading) return;
+    resultsLoading.classList.toggle("hidden", !isLoading);
+  }
+
+  function nextFrame() {
+    return new Promise(resolve => requestAnimationFrame(() => resolve()));
+  }
+
   async function loadData() {
+    const loadId = ++activeLoadId;
+    setLoading(true);
+    await nextFrame(); // Overlay sichtbar machen, bevor Fetch/Rendering startet
+
     try {
       const query = buildResultsQuery();
       const resultsUrl = query ? `/results?${query}` : "/results";
@@ -32,6 +47,11 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       console.error("Fehler beim Laden:", err);
       resultsContainer.innerHTML = "<p>Fehler beim Laden der Daten</p>";
+    } finally {
+      if (loadId === activeLoadId) {
+        await nextFrame(); // nach DOM-Render ausblenden
+        setLoading(false);
+      }
     }
   }
 

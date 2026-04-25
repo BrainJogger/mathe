@@ -34,6 +34,51 @@ header h1 {
   gap: 16px;
 }
 
+.hidden {
+  display: none !important;
+}
+
+.results-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 250, 230, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.results-loading-card {
+  background: #fff;
+  border: 2px solid #ffd2c4;
+  border-radius: 14px;
+  padding: 14px 18px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.results-spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid #ffd8cf;
+  border-top-color: #ff6f61;
+  animation: admin-spin 800ms linear infinite;
+}
+
+.results-loading-text {
+  font-weight: 700;
+  color: #7d3c35;
+  font-size: 0.95rem;
+}
+
+@keyframes admin-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ===============================
    INPUTS + BUTTONS
 ================================ */
