@@ -250,7 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const studentDownloadBtn = document.createElement("button");
             studentDownloadBtn.className = "btn export-btn";
-            studentDownloadBtn.textContent = "📄 Kind PDF";
+            studentDownloadBtn.textContent = `📄 ${studentName} PDF`;
 
             studentTitle.appendChild(studentTitleText);
             studentTitle.appendChild(studentDownloadBtn);
